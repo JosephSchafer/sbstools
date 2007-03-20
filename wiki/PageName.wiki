@@ -15,6 +15,7 @@
   * Software for connecting to Basestation via port and storing all relevant data in a mysql database.
 
 *Timeframe*
+
 fully functional solution till April 1st, 2007 to start recording.
 
 ===Package2===
@@ -24,6 +25,7 @@ fully functional solution till April 1st, 2007 to start recording.
   * Software to filter flight data stored in mysql database by geographical aspects. (GPS)
 
 *Timeframe*
+
 till April 15th?
 
 ===Package3===
@@ -33,4 +35,5 @@ till April 15th?
   * Reporting: software or existing applications to create useful statistics
 
 *Timeframe*
+
 May 2007?
