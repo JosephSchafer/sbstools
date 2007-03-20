@@ -93,10 +93,12 @@ class MessageHandler:
             for a, b in mapping.items():
                 logging.info('%s: %s' %(a,b))
             
+            # split millisecond part from timemessagegenerated
+            time_ms = int(mapping.get('timemessagegenerated').split('.')[1])
             if transmissiontype in [2, 3]:
                 logging.debug('lat: %f' %mapping.get('lat'))
                 logging.debug('long: %f' %mapping.get('long'))
-                collector.logFlightdata(mapping.get('flightid'), mapping.get('lat'), mapping.get('long'), mapping.get('datemessagegenerated') + ' ' + mapping.get('timemessagegenerated'), transmissiontype)
+                collector.logFlightdata(mapping.get('flightid'), mapping.get('lat'), mapping.get('long'), mapping.get('datemessagegenerated') + ' ' + mapping.get('timemessagegenerated'), time_ms, transmissiontype)
             if transmissiontype == 1:
                 logging.debug('callsign: %s' %mapping.get('callsign'))
         else:
@@ -123,11 +125,11 @@ class DataCollector:
         cursor.execute(sql)
         cursor.close()
         
-    def logFlightdata(self, flightid, latitude, longitude, time, transmissiontype=0):
+    def logFlightdata(self, flightid, latitude, longitude, time, time_ms=0, transmissiontype=0):
         """ store data in mysql """
         # get database cursor
         cursor = self.db.cursor()
-        sql = "INSERT INTO flightdata (flightid, latitude, longitude, time, transmissiontype) VALUES (%s, %s, %s, '%s', %i)" %(str(flightid), str(latitude), str(longitude), time, transmissiontype)
+        sql = "INSERT INTO flightdata (flightid, latitude, longitude, time, time_ms, transmissiontype) VALUES (%s, %s, %s, '%s', %i, %i)" %(str(flightid), str(latitude), str(longitude), time, time_ms, transmissiontype)
         logging.debug(sql)
         cursor.execute(sql)
         cursor.close()

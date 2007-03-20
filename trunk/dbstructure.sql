@@ -37,8 +37,10 @@ CREATE TABLE `flightdata` (
   `longitude` float default NULL,
   `flightid` int(10) unsigned default NULL,
   `time` datetime default NULL,
+  `time_ms` smallint(5) unsigned default NULL,
+  `transmissiontype` tinyint(3) unsigned default NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=88245 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=193 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `flights`
