@@ -87,20 +87,22 @@ class MessageHandler:
             transmissiontypes = {1: 'IDMessage', 2: 'SurfacePositionMessage', 3: 'AirbornePositionMessage', 4: 'AirborneVelocityMessage', 5: 'SurveillanceAltMessage', 6: 'SurveillanceIDMessage', 7: 'AirToAirMessage', 8: 'AllCallReply'}
             transmissiontype = mapping.get('transmissiontype')
     
-            # transmissiontype 2 and 3 contain geographical information (lat, long)
-            logging.info('---------')
             logging.info('transmissiontype %i:' %(transmissiontype))
             for a, b in mapping.items():
                 logging.info('%s: %s' %(a,b))
             
             # split millisecond part from timemessagegenerated
             time_ms = int(mapping.get('timemessagegenerated').split('.')[1])
+            # transmissiontype 2 and 3 contain geographical information (lat, long)
             if transmissiontype in [2, 3]:
                 logging.debug('lat: %f' %mapping.get('lat'))
                 logging.debug('long: %f' %mapping.get('long'))
                 collector.logFlightdata(mapping.get('flightid'), mapping.get('lat'), mapping.get('long'), mapping.get('datemessagegenerated') + ' ' + mapping.get('timemessagegenerated'), time_ms, transmissiontype)
-            if transmissiontype == 1:
+            elif transmissiontype == 1:
                 logging.debug('callsign: %s' %mapping.get('callsign'))
+            elif transmissiontype == 4:
+                logging.debug('track: %s' %mapping.get('track'))
+                collector.logAirborneVelocityMessage(mapping.get('flightid'), mapping.get('groundspeed'), mapping.get('verticalrate'), mapping.get('track'))
         else:
             # unknown msgtype!
             pass
@@ -133,7 +135,15 @@ class DataCollector:
         logging.debug(sql)
         cursor.execute(sql)
         cursor.close()
-
+    
+    def logAirborneVelocityMessage(self, flightid, groundspeed, verticalrate, track):
+        ''' store transmission type 4 '''
+        cursor = self.db.cursor()
+        sql = "INSERT INTO airbornevelocitymessage (flightid, groundspeed, verticalrate, track) VALUES (%s, %s, %s, %s)" %(flightid, groundspeed, verticalrate, track)
+        logging.debug(sql)
+        cursor.execute(sql)
+        cursor.close()
+        
 def main():
     handler = MessageHandler()
     while 1:

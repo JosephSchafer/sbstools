@@ -16,6 +16,20 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `airbornevelocitymessage`
+--
+
+DROP TABLE IF EXISTS `airbornevelocitymessage`;
+CREATE TABLE `airbornevelocitymessage` (
+  `id` bigint(20) unsigned NOT NULL auto_increment,
+  `flightid` int(10) unsigned default NULL,
+  `groundspeed` smallint(5) unsigned default NULL,
+  `verticalrate` smallint(6) default NULL,
+  `track` smallint(5) unsigned default NULL,
+  PRIMARY KEY  (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=862 DEFAULT CHARSET=latin1;
+
+--
 -- Table structure for table `aircrafts`
 --
 
@@ -40,7 +54,7 @@ CREATE TABLE `flightdata` (
   `time_ms` smallint(5) unsigned default NULL,
   `transmissiontype` tinyint(3) unsigned default NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=193 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=6637 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `flights`
@@ -121,7 +135,7 @@ CREATE TABLE `kexi__objects` (
   `o_caption` varchar(200) default NULL,
   `o_desc` longtext,
   PRIMARY KEY  (`o_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `kexi__parts`
