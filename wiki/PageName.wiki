@@ -11,7 +11,7 @@
 
 *Description*
 
-  * Setup of [systemconfiguration]
+  * Setup of hardware (see [systemconfiguration])
   * Software for connecting to Basestation via port and storing all relevant data in a mysql database.
 
 *Timeframe*
