@@ -1,6 +1,5 @@
 =Overview=
   * [systemconfiguration]
-  * 2nd wiki - http://flugradar.stikipad.com/notes/
 
 ==Details==
   * Socket output format - http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=1402
