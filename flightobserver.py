@@ -20,10 +20,8 @@ class MessageHandler:
     
     def _createMap(self, msgparts, fields):
         ''' map msg parts to fields '''
-        map = {}
-        for i in range(len(fields)):
-            map[fields[i]] = msgparts[i]
-        return map
+        mapping = dict(zip(fields, msgparts))
+        return mapping
         
     def processMessage(self, msg):
         ''' message specs at http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=1402 '''
@@ -41,47 +39,56 @@ class MessageHandler:
             
         elif msgtype == 'AIR':
             # new aircraft appears in the right-handed aircraft list for the first time
-            # q: what about if aircraft disappears for some seconds?
+            # Q: what about if aircraft disappears for some seconds?
             fields = ['msgtype', '-', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged']
-            map = self._createMap(parts, fields)
-            print map
+            mapping = self._createMap(parts, fields)
+            print mapping
         
         elif msgtype == 'ID':
-            # when an aircraft changes, or sets, its callsign.
+            # when an aircraft changes or sets its callsign.
             fields = ['msgtype', '-', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged', 'callsign']
-            map = {}
-            map = self._createMap(parts, fields)
-            print map
+            mapping = self._createMap(parts, fields)
+            print mapping
     
         elif msgtype == 'MSG':
+            # delayed output of every message from aircraft
             fields = ['msgtype', 'transmissiontype', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged', 'callsign', 'altitude', 'groundspeed', 'track', 'lat', 'long', 'verticalrate', 'squawk', 'alert', 'emergency', 'spi', 'isonground']
-            map = self._createMap(parts, fields)
-            #print map
-        
-            # auto-conversion of special fields
-            for field in map.keys():
+            mapping = self._createMap(parts, fields)
+            
+            # typeconversion of some fields
+            for field in mapping.keys():
                 if field in ['groundspeed', 'lat', 'long']:
                     try:
-                        map[field] = float(map.get(field))
+                        mapping[field] = float(mapping.get(field))
                     except ValueError:
                         pass
                 if field in ['transmissiontype', 'sessionid', 'aircraftid', 'flightid', 'altitude', 'verticalrate']:
                     try:
-                        map[field] = int(map.get(field))
+                        mapping[field] = int(mapping.get(field))
                     except ValueError:
                         pass
                 
+            # there are 8 different transmissiontypes of type MSG
+            # 1 IDMessage: callsign
+            # 2 SurfacePositionMessage: altitude, groundspeed, track, lat, long
+            # 3 AirbornePositionMessage: altitute, lat, long, alert, emergency, spi
+            # 4 AirborneVelocityManger: groundspeed, track, verticalrate
+            # 5 SurveillanceAltMessage: altitude, alert, spi
+            # 6 SurveillanceIDMessage: altitude, squawk, alert, emergency, spi
+            # 7 AirToAirMessage: altitude
+            # 8 AirCallReplay: none at the moment
+            # specs from http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=1402
             transmissiontypes = {1: 'IDMessage', 2: 'SurfacePositionMessage', 3: 'AirbornePositionMessage', 4: 'AirborneVelocityMessage', 5: 'SurveillanceAltMessage', 6: 'SurveillanceIDMessage', 7: 'AirToAirMessage', 8: 'AllCallReply'}
-            transmissiontype = map['transmissiontype']
-            #print transmissiontypes.get(transmissiontype)
+            transmissiontype = mapping.get('transmissiontype')
+    
+            # transmissiontype 2 and 3 contain geographical information (lat, long)
             if transmissiontype in [2, 3]:
-                print 'lat: %f' %map.get('lat')
-                print 'long: %f' %map.get('long')
+                print 'lat: %f' %mapping.get('lat')
+                print 'long: %f' %mapping.get('long')
                 collector = DataCollector()
-                collector.logFlightdata(map.get('flightid'), map.get('lat'), map.get('long'), map.get('datemessagegenerated') + ' ' + map.get('timemessagegenerated') )
+                collector.logFlightdata(mapping.get('flightid'), mapping.get('lat'), mapping.get('long'), mapping.get('datemessagegenerated') + ' ' + mapping.get('timemessagegenerated') )
             if transmissiontype == 1:
-                print 'callsign: %s' %map.get('callsign')
-            #print map
+                print 'callsign: %s' %mapping.get('callsign')
         else:
             # unknown msgtype!
             pass
@@ -108,10 +115,10 @@ class DataCollector:
         cursor.close()
 
 def main():
+    handler = MessageHandler()
     while 1:
         message = tn.read_until('\n')
         message = message.replace("\r\n", "")
-        handler = MessageHandler()
         handler.processMessage(message)
 
 if __name__ == '__main__':
