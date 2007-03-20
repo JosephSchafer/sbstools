@@ -9,11 +9,14 @@
 # $Id$
 import sys
 import telnetlib
+import logging
 import MySQLdb
+
 HOST = "192.168.2.102" # ip-address Basestation is running at
 PORT = 30003 # port 30003 is Basestation's default
-
 tn = telnetlib.Telnet(HOST, PORT)
+# this Python logging facility rocks! :)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
 class MessageHandler:
     ''' process messages '''
@@ -42,14 +45,14 @@ class MessageHandler:
             # Q: what about if aircraft disappears for some seconds?
             fields = ['msgtype', '-', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged']
             mapping = self._createMap(parts, fields)
-            print mapping
+            logging.debug(mapping)
         
         elif msgtype == 'ID':
             collector = DataCollector()
             # when an aircraft changes or sets its callsign.
             fields = ['msgtype', '-', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged', 'callsign']
             mapping = self._createMap(parts, fields)
-            print mapping
+            logging.debug(mapping)
             collector.newAircraft(mapping.get('aircraftid'), mapping.get('hexident'))
     
         elif msgtype == 'MSG':
@@ -85,18 +88,17 @@ class MessageHandler:
             transmissiontype = mapping.get('transmissiontype')
     
             # transmissiontype 2 and 3 contain geographical information (lat, long)
-            print '---------'
-            print 'transmissiontype %i:' %(transmissiontype)
+            logging.info('---------')
+            logging.info('transmissiontype %i:' %(transmissiontype))
             for a, b in mapping.items():
-                print '%s: %s' %(a,b)
-            print '---------'
+                logging.info('%s: %s' %(a,b))
             
             if transmissiontype in [2, 3]:
-                print 'lat: %f' %mapping.get('lat')
-                print 'long: %f' %mapping.get('long')
+                logging.debug('lat: %f' %mapping.get('lat'))
+                logging.debug('long: %f' %mapping.get('long'))
                 collector.logFlightdata(mapping.get('flightid'), mapping.get('lat'), mapping.get('long'), mapping.get('datemessagegenerated') + ' ' + mapping.get('timemessagegenerated') )
             if transmissiontype == 1:
-                print 'callsign: %s' %mapping.get('callsign')
+                logging.debug('callsign: %s' %mapping.get('callsign'))
         else:
             # unknown msgtype!
             pass
@@ -117,7 +119,7 @@ class DataCollector:
         ''' new aircraft appears '''
         cursor = self.db.cursor()
         sql = "INSERT INTO aircrafts (ID, hexident) VALUES (%i, '%s')" % (int(aircraftid), hexident)
-        print sql
+        logging.debug(sql)
         cursor.execute(sql)
         cursor.close()
         
@@ -126,7 +128,7 @@ class DataCollector:
         # get database cursor
         cursor = self.db.cursor()
         sql = "INSERT INTO flightdata" + " (flightid, latitude, longitude, time) VALUES " + "(" + str(flightid) + ", " + str(latitude) + ", " + str(longitude) + ", '" + time + "')"
-        print sql
+        logging.debug(sql)
         cursor.execute(sql)
         cursor.close()
 
