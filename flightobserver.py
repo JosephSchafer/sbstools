@@ -1,4 +1,4 @@
-# $Id$
+#!/usr/bin/python
 # Flight Observation Service
 # SBS-1 is a appliance that receives ADS-B signals from aircraft.
 # The software BaseStation monitors and displays these flights
@@ -6,8 +6,7 @@
 # This software listens on this port and stores the information retrieved
 # in a separate database for further processing. (e.g. filtering by geographical criteria)
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
-
-#!/usr/bin/python
+# $Id$
 import sys
 import telnetlib
 import MySQLdb
