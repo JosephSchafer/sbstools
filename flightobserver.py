@@ -56,9 +56,9 @@ class MessageHandler:
         elif msgtype == 'MSG':
             fields = ['msgtype', 'transmissiontype', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged', 'callsign', 'altitude', 'groundspeed', 'track', 'lat', 'long', 'verticalrate', 'squawk', 'alert', 'emergency', 'spi', 'isonground']
             map = self._createMap(parts, fields)
-            print map
+            #print map
         
-        # auto-conversion of special fields
+            # auto-conversion of special fields
             for field in map.keys():
                 if field in ['groundspeed', 'lat', 'long']:
                     try:
@@ -77,8 +77,8 @@ class MessageHandler:
             if transmissiontype in [2, 3]:
                 print 'lat: %f' %map.get('lat')
                 print 'long: %f' %map.get('long')
-                reporter = Reporter()
-                reporter.logFlightdata(map.get('flightid'), map.get('lat'), map.get('long'), map.get('datemessagegenerated') + ' ' + map.get('timemessagegenerated') )
+                collector = DataCollector()
+                collector.logFlightdata(map.get('flightid'), map.get('lat'), map.get('long'), map.get('datemessagegenerated') + ' ' + map.get('timemessagegenerated') )
             if transmissiontype == 1:
                 print 'callsign: %s' %map.get('callsign')
             #print map
@@ -88,12 +88,12 @@ class MessageHandler:
     # listen on socket until user terminates process
 
 
-class Reporter:
+class DataCollector:
     ''' database agent '''
     
     database = 'flightdb'
-    user = ''
-    password = ''
+    user = 'flight'
+    password = 'flyaway'
     
     def __init__(self):
         self.db = MySQLdb.connect(host = 'localhost', db = self.database, user = self.user, passwd = self.password)
@@ -116,4 +116,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
