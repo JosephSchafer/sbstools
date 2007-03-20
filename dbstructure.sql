@@ -16,13 +16,13 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `aircraft`
+-- Table structure for table `aircrafts`
 --
 
-DROP TABLE IF EXISTS `aircraft`;
-CREATE TABLE `aircraft` (
-  `id` bigint(20) unsigned NOT NULL auto_increment,
-  `modes` varchar(200) default NULL,
+DROP TABLE IF EXISTS `aircrafts`;
+CREATE TABLE `aircrafts` (
+  `id` bigint(20) unsigned NOT NULL,
+  `hexident` varchar(6) default NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
@@ -38,7 +38,7 @@ CREATE TABLE `flightdata` (
   `flightid` int(10) unsigned default NULL,
   `time` datetime default NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=1140 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=79392 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `flights`
