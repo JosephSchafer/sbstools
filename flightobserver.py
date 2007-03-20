@@ -3,35 +3,41 @@
 # The software BaseStation monitors and displays these flights
 # on a screen. Via port 30003 (default) the logged data can be obtained (5' delay)
 # This software listens on this port and stores the information retrieved
-# in a separate database for further processing.
+# in a separate database for further processing. (e.g. filtering by geographical criteria)
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
 
 #!/usr/bin/python
 import sys
 import telnetlib
 import MySQLdb
-HOST = "192.168.2.102"
-PORT = 30003 
-# port 30003 is default
+HOST = "192.168.2.102" # ip-address Basestation is running at
+PORT = 30003 # port 30003 is Basestation's default
 
 tn = telnetlib.Telnet(HOST, PORT)
-# message information at http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=1402
+
 def decodeMessage(line):
-    ''' parse message '''
-    DELIMITER = ','
+    ''' message specs at http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=1402 '''
+    
+    DELIMITER = ',' # parts of message are separated by this char
     parts = line.split(DELIMITER)
-    msgtype = parts[0]
+    # first part of message indicates MESSAGE TYPE
+    # according to the specs the following types are known: 
+    # selection change message (SEL), new aircraft message (AIR), new id message (ID) transmission message (MSG)
+    msgtype = parts[0] 
     
     if msgtype == 'SEL':
-        # selection of new aircraft in basestation interface is irrelevant!
+        # selection of new aircraft in Basestation GUI is irrelevant, so we ignore it!
         pass
+        
     elif msgtype == 'AIR':
-        # new aircraft appears for the first time in the right-handed aircraft list
+        # new aircraft appears in the right-handed aircraft list for the first time
+        # q: what about if aircraft disappears for some seconds?
         fields = ['msgtype', '-', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged']
         map = {}
         for i in range(len(fields)):
             map[fields[i]] = parts[i]
         print map
+    
     elif msgtype == 'ID':
         # when an aircraft changes, or sets, its callsign.
         fields = ['msgtype', '-', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged', 'callsign']
@@ -39,6 +45,7 @@ def decodeMessage(line):
         for i in range(len(fields)):
             map[fields[i]] = parts[i]
         print map
+    
     elif msgtype == 'MSG':
         fields = ['msgtype', 'transmissiontype', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged', 'callsign', 'altitude', 'groundspeed', 'track', 'lat', 'long', 'verticalrate', 'squawk', 'alert', 'emergency', 'spi', 'isonground']
         map = {}
@@ -74,6 +81,7 @@ def decodeMessage(line):
         # unknown msgtype!
         pass
 # listen on socket until user terminates process
+
 
 class Reporter:
     
