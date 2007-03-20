@@ -38,7 +38,7 @@ CREATE TABLE `flightdata` (
   `flightid` int(10) unsigned default NULL,
   `time` datetime default NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=79392 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=88245 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `flights`
@@ -50,7 +50,7 @@ CREATE TABLE `flights` (
   `aircraftid` int(11) default NULL,
   `callsign` int(11) default NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `kexi__blobs`
