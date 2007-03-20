@@ -8,3 +8,29 @@
 ==Project packages==
 
 ===Package1===
+
+*Description*
+
+  * Setup of [systemconfiguration]
+  * Software for connecting to Basestation via port and storing all relevant data in a mysql database.
+
+*Timeframe*
+fully functional solution till April 1st, 2007 to start recording.
+
+===Package2===
+
+*Description*
+
+  * Software to filter flight data stored in mysql database by geographical aspects. (GPS)
+
+*Timeframe*
+till April 15th?
+
+===Package3===
+
+*Description*
+
+  * Reporting: software or existing applications to create useful statistics
+
+*Timeframe*
+May 2007?
