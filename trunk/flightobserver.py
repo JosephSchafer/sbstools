@@ -15,79 +15,85 @@ PORT = 30003 # port 30003 is Basestation's default
 
 tn = telnetlib.Telnet(HOST, PORT)
 
-def decodeMessage(line):
-    ''' message specs at http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=1402 '''
+class MessageHandler:
+    ''' process messages '''
     
-    DELIMITER = ',' # parts of message are separated by this char
-    parts = line.split(DELIMITER)
-    # first part of message indicates MESSAGE TYPE
-    # according to the specs the following types are known: 
-    # selection change message (SEL), new aircraft message (AIR), new id message (ID) transmission message (MSG)
-    msgtype = parts[0] 
-    
-    if msgtype == 'SEL':
-        # selection of new aircraft in Basestation GUI is irrelevant, so we ignore it!
-        pass
+    def _createMap(self, msgparts, fields):
+        ''' map msg parts to fields '''
+        map = {}
+        for i in range(len(fields)):
+            map[fields[i]] = msgparts[i]
+        return map
         
-    elif msgtype == 'AIR':
-        # new aircraft appears in the right-handed aircraft list for the first time
-        # q: what about if aircraft disappears for some seconds?
-        fields = ['msgtype', '-', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged']
-        map = {}
-        for i in range(len(fields)):
-            map[fields[i]] = parts[i]
-        print map
+    def processMessage(self, msg):
+        ''' message specs at http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=1402 '''
     
-    elif msgtype == 'ID':
-        # when an aircraft changes, or sets, its callsign.
-        fields = ['msgtype', '-', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged', 'callsign']
-        map = {}
-        for i in range(len(fields)):
-            map[fields[i]] = parts[i]
-        print map
+        DELIMITER = ',' # parts of message are separated by this char
+        parts = msg.split(DELIMITER)
+        # first part of message indicates MESSAGE TYPE
+        # according to the specs the following types are known: 
+        # selection change message (SEL), new aircraft message (AIR), new id message (ID) transmission message (MSG)
+        msgtype = parts[0] 
+        
+        if msgtype == 'SEL':
+            # selection of new aircraft in Basestation GUI is irrelevant, so we ignore it!
+            pass
+            
+        elif msgtype == 'AIR':
+            # new aircraft appears in the right-handed aircraft list for the first time
+            # q: what about if aircraft disappears for some seconds?
+            fields = ['msgtype', '-', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged']
+            map = self._createMap(parts, fields)
+            print map
+        
+        elif msgtype == 'ID':
+            # when an aircraft changes, or sets, its callsign.
+            fields = ['msgtype', '-', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged', 'callsign']
+            map = {}
+            map = self._createMap(parts, fields)
+            print map
     
-    elif msgtype == 'MSG':
-        fields = ['msgtype', 'transmissiontype', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged', 'callsign', 'altitude', 'groundspeed', 'track', 'lat', 'long', 'verticalrate', 'squawk', 'alert', 'emergency', 'spi', 'isonground']
-        map = {}
-        # map values to fields
-        for i in range(len(fields)):
-            map[fields[i]] = parts[i]
+        elif msgtype == 'MSG':
+            fields = ['msgtype', 'transmissiontype', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged', 'callsign', 'altitude', 'groundspeed', 'track', 'lat', 'long', 'verticalrate', 'squawk', 'alert', 'emergency', 'spi', 'isonground']
+            map = self._createMap(parts, fields)
+            print map
         
         # auto-conversion of special fields
-        for field in map.keys():
-            if field in ['groundspeed', 'lat', 'long']:
-                try:
-                    map[field] = float(map.get(field))
-                except ValueError:
-                    pass
-            if field in ['transmissiontype', 'sessionid', 'aircraftid', 'flightid', 'altitude', 'verticalrate']:
-                try:
-                    map[field] = int(map.get(field))
-                except ValueError:
-                    pass
-            
-        transmissiontypes = {1: 'IDMessage', 2: 'SurfacePositionMessage', 3: 'AirbornePositionMessage', 4: 'AirborneVelocityMessage', 5: 'SurveillanceAltMessage', 6: 'SurveillanceIDMessage', 7: 'AirToAirMessage', 8: 'AllCallReply'}
-        transmissiontype = map['transmissiontype']
-        #print transmissiontypes.get(transmissiontype)
-        if transmissiontype in [2, 3]:
-            print 'lat: %f' %map.get('lat')
-            print 'long: %f' %map.get('long')
-            reporter = Reporter()
-            reporter.logFlightdata(map.get('flightid'), map.get('lat'), map.get('long'), map.get('datemessagegenerated') + ' ' + map.get('timemessagegenerated') )
-        if transmissiontype == 1:
-            print 'callsign: %s' %map.get('callsign')
-        #print map
-    else:
-        # unknown msgtype!
-        pass
-# listen on socket until user terminates process
+            for field in map.keys():
+                if field in ['groundspeed', 'lat', 'long']:
+                    try:
+                        map[field] = float(map.get(field))
+                    except ValueError:
+                        pass
+                if field in ['transmissiontype', 'sessionid', 'aircraftid', 'flightid', 'altitude', 'verticalrate']:
+                    try:
+                        map[field] = int(map.get(field))
+                    except ValueError:
+                        pass
+                
+            transmissiontypes = {1: 'IDMessage', 2: 'SurfacePositionMessage', 3: 'AirbornePositionMessage', 4: 'AirborneVelocityMessage', 5: 'SurveillanceAltMessage', 6: 'SurveillanceIDMessage', 7: 'AirToAirMessage', 8: 'AllCallReply'}
+            transmissiontype = map['transmissiontype']
+            #print transmissiontypes.get(transmissiontype)
+            if transmissiontype in [2, 3]:
+                print 'lat: %f' %map.get('lat')
+                print 'long: %f' %map.get('long')
+                reporter = Reporter()
+                reporter.logFlightdata(map.get('flightid'), map.get('lat'), map.get('long'), map.get('datemessagegenerated') + ' ' + map.get('timemessagegenerated') )
+            if transmissiontype == 1:
+                print 'callsign: %s' %map.get('callsign')
+            #print map
+        else:
+            # unknown msgtype!
+            pass
+    # listen on socket until user terminates process
 
 
 class Reporter:
+    ''' database agent '''
     
     database = 'flightdb'
-    user = 'root'
-    password = 'Timsql18'
+    user = ''
+    password = ''
     
     def __init__(self):
         self.db = MySQLdb.connect(host = 'localhost', db = self.database, user = self.user, passwd = self.password)
@@ -105,7 +111,8 @@ def main():
     while 1:
         message = tn.read_until('\n')
         message = message.replace("\r\n", "")
-        decodeMessage(message)
+        handler = MessageHandler()
+        handler.processMessage(message)
 
 if __name__ == '__main__':
     main()
