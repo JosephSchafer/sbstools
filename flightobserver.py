@@ -1,4 +1,4 @@
-# $Id
+# $Id$
 # Flight Observation Service
 # SBS-1 is a appliance that receives ADS-B signals from aircraft.
 # The software BaseStation monitors and displays these flights
