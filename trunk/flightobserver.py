@@ -66,7 +66,7 @@ def decodeMessage(line):
             print 'lat: %f' %map.get('lat')
             print 'long: %f' %map.get('long')
             reporter = Reporter()
-            reporter.logFlightdata(map.get('flightid'), map.get('lat'), map.get('long'), map.get('datemessagegenerated') + ' ' + map.get('timemessagegenerated'))
+            reporter.logFlightdata(map.get('flightid'), map.get('lat'), map.get('long'), map.get('datemessagegenerated') + ' ' + map.get('timemessagegenerated') )
         if transmissiontype == 1:
             print 'callsign: %s' %map.get('callsign')
         #print map
@@ -86,12 +86,11 @@ class Reporter:
       
     def logFlightdata(self, flightid, latitude, longitude, time):
         """ store data in mysql """
-        print time
         # get database cursor
         cursor = self.db.cursor()
-        cursor.execute("INSERT INTO flightdata" + 
-                                 " (flightid, latitude, longitude, time) VALUES " +
-                                 "(" + str(flightid) + ", " + str(latitude) + ", " + str(longitude) + ", " + time + ")")
+        sql = "INSERT INTO flightdata" + " (flightid, latitude, longitude, time) VALUES " + "(" + str(flightid) + ", " + str(latitude) + ", " + str(longitude) + ", '" + time + "')"
+        print sql
+        cursor.execute(sql)
         cursor.close()
 
 def main():
