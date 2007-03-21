@@ -6,3 +6,10 @@
     apt-get install shapelib
     apt-get build-dep shapelib
     }}}
+
+  * ogr (from gdal)
+
+    {{{
+    apt-get install python-gdal
+    }}}
+    takes about 500 seconds to calculate if GPS-coordinate (Point) is within polygon
