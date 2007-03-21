@@ -124,7 +124,10 @@ class DataCollector:
         cursor = self.db.cursor()
         sql = "INSERT INTO aircrafts (ID, hexident) VALUES (%i, '%s')" % (int(aircraftid), hexident)
         logging.debug(sql)
-        cursor.execute(sql)
+        try:
+            cursor.execute(sql)
+        except MySQLdb.IntegrityError, e:
+            logging.warn(str(e))
         cursor.close()
         
     def logFlightdata(self, flightid, latitude, longitude, time, time_ms=0, transmissiontype=0):
