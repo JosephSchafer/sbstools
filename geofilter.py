@@ -20,9 +20,12 @@ def main():
     layer = src.GetLayer()
     feature = layer.GetNextFeature()
     geo = feature.GetGeometryRef()
-    
-    wkt = 'POINT(47.45753 9.96015)'
+
+ 
+    wkt = 'POINT(9.96015 47.45753)'
+    #wkt = 'POINT(9.743 47.711)'
     point = ogr.CreateGeometryFromWkt(wkt)
+    #should have same ref
 
     start = time.time()
     print "within?: " + str(geo.Contains(point))
