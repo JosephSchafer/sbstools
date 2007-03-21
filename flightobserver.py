@@ -141,7 +141,10 @@ class DataCollector:
         cursor = self.db.cursor()
         sql = "INSERT INTO airbornevelocitymessage (flightid, groundspeed, verticalrate, track) VALUES (%s, %s, %s, %s)" %(flightid, groundspeed, verticalrate, track)
         logging.debug(sql)
-        cursor.execute(sql)
+        try:
+            cursor.execute(sql)
+        except MySQLdb.IntegrityError, e:
+            logger.warn(str(e))
         cursor.close()
         
 def main():
