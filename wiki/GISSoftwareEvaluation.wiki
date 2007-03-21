@@ -1,0 +1,8 @@
+=Overview=
+
+  * pyshapelib: http://ftp.intevation.de/users/bh/pyshapelib/
+
+    {{{
+    apt-get install shapelib
+    apt-get build-dep shapelib
+    }}}
