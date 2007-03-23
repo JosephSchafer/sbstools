@@ -2,7 +2,7 @@
 --
 -- Host: localhost    Database: flightdb
 -- ------------------------------------------------------
--- Server version	5.0.24a-Debian_9-log
+-- Server version	5.0.24a-Debian_9ubuntu0.1-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -27,7 +27,7 @@ CREATE TABLE `airbornevelocitymessage` (
   `verticalrate` smallint(6) default NULL,
   `track` smallint(5) unsigned default NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=862 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=836851 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `aircrafts`
@@ -54,7 +54,7 @@ CREATE TABLE `flightdata` (
   `time_ms` smallint(5) unsigned default NULL,
   `transmissiontype` tinyint(3) unsigned default NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=6637 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=805159 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `flights`
@@ -62,11 +62,11 @@ CREATE TABLE `flightdata` (
 
 DROP TABLE IF EXISTS `flights`;
 CREATE TABLE `flights` (
-  `id` bigint(20) unsigned NOT NULL auto_increment,
+  `id` bigint(20) unsigned NOT NULL,
   `aircraftid` int(11) default NULL,
-  `callsign` int(11) default NULL,
+  `callsign` varchar(6) default NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `kexi__blobs`
