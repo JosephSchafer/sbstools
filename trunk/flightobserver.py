@@ -41,11 +41,16 @@ class MessageHandler:
             pass
             
         elif msgtype == 'AIR':
+            collector = DataCollector()
             # new aircraft appears in the right-handed aircraft list for the first time
             # Q: what about if aircraft disappears for some seconds?
             fields = ['msgtype', '-', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged']
             mapping = self._createMap(parts, fields)
             logging.debug(mapping)
+            
+            flightid = int(mapping.get('flightid'))
+            aircraftid = int(mapping.get('aircraftid'))
+            collector.logNewFlight(flightid, aircraftid)
         
         elif msgtype == 'ID':
             collector = DataCollector()
@@ -53,7 +58,11 @@ class MessageHandler:
             fields = ['msgtype', '-', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged', 'callsign']
             mapping = self._createMap(parts, fields)
             logging.debug(mapping)
-            collector.newAircraft(mapping.get('aircraftid'), mapping.get('hexident'))
+            
+            aircraftid = int(mapping.get('aircraftid'))
+            callsign = mapping.get('hexident')
+            flightid = int(mapping.get('flightid'))
+            collector.updateFlightdata(flightid, aircraftid, callsign)
     
         elif msgtype == 'MSG':
             collector = DataCollector()
@@ -119,6 +128,23 @@ class DataCollector:
     def __init__(self):
         self.db = MySQLdb.connect(host = 'localhost', db = self.database, user = self.user, passwd = self.password)
       
+    def logNewFlight(self, flightid, aircraftid):
+        ''' flight appears on radar screen for the first time '''
+        cursor = self.db.cursor()
+        sql = "INSERT INTO flights (ID, aircraftid) VALUES (%i, %i)" %(flightid, aircraftid)
+        logging.debug(sql)
+        cursor.execute(sql)
+        cursor.close()
+    
+    def updateFlightdata(self, flightid, aircraftid, callsign):
+        ''' update flight info after callsign was set '''
+        cursor = self.db.cursor()
+        sql = "UPDATE flights SET callsign='%s' WHERE ID=%i" %(callsign, flightid)
+        logging.debug(sql)
+        cursor.execute(sql)
+        cursor.close()
+        self.newAircraft(aircraftid, callsign)
+        
     def newAircraft(self, aircraftid, hexident):
         ''' new aircraft appears '''
         cursor = self.db.cursor()
@@ -129,7 +155,7 @@ class DataCollector:
         except MySQLdb.IntegrityError, e:
             logging.warn(str(e))
         cursor.close()
-        
+         
     def logFlightdata(self, flightid, latitude, longitude, time, time_ms=0, transmissiontype=0):
         """ store data in mysql """
         # get database cursor
