@@ -7,7 +7,7 @@
     apt-get build-dep shapelib
     }}}
 
-  * ogr (from gdal)
+  * ogr/gdal: http://www.gdal.org/ogr/
 
     {{{
     apt-get install python-gdal
