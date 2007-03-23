@@ -62,10 +62,14 @@ def main():
     # 240733 yes ~470 seconds
     # 240742 no
     # 243494 dunno
-    linestring = createLineForFlight(243600)
-    print "intersects?: " + str(geo.Intersect(linestring)) #benchmark: 474.821190119 seconds
-    # print "overlaps?: " + str(geo.Overlaps(linestring)) #benchmark: 466.047887087
-    # print "touches?: " + str(geo.Touches(linestring)) #benchmark: 468.383606911
+    # 243663 yes
+    # 243666 no
+    # 243689 yes
+    linestring = createLineForFlight(243666)
+    #print "distance?: " + str(geo.Distance(linestring)) #benchmark: 466.047887087
+    #print "intersects?: " + str(geo.Intersect(linestring)) #benchmark: 474.821190119 seconds
+    #print "overlaps?: " + str(geo.Overlaps(linestring)) #benchmark: 466.047887087
+    print "touches?: " + str(geo.Touches(linestring)) #benchmark: 468.383606911
     #print "intersects?:" + str(geo.Intersect(polygon))
     #print "within?: " + str(geo.Contains(point))
     print "duration: " + str(time.time() - start)
