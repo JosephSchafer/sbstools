@@ -12,5 +12,7 @@
     {{{
     apt-get install python-gdal
     }}}
-    takes about 500 seconds to calculate if GPS-coordinate (Point) is within polygon
-    it takes the same time to calculate if linestring (flight line consists of ~1000 coordinates) is within polygon (map of Vorarlberg contains 79754 coordinates!)
+    issues:
+
+      * takes about 500 seconds to calculate if GPS-coordinate (Point) is within polygon
+      * takes the same time to calculate if linestring (flight line consists of ~1000 coordinates) is within polygon (map of Vorarlberg contains 79754 coordinates!)
