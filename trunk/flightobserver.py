@@ -60,9 +60,10 @@ class MessageHandler:
             logging.debug(mapping)
             
             aircraftid = int(mapping.get('aircraftid'))
-            callsign = mapping.get('hexident')
+            hexident = mapping.get('hexident')
+            callsign = mapping.get('callsign')
             flightid = int(mapping.get('flightid'))
-            collector.updateFlightdata(flightid, aircraftid, callsign)
+            collector.updateFlightdata(flightid, aircraftid, callsign, hexident)
     
         elif msgtype == 'MSG':
             collector = DataCollector()
@@ -136,14 +137,14 @@ class DataCollector:
         cursor.execute(sql)
         cursor.close()
     
-    def updateFlightdata(self, flightid, aircraftid, callsign):
+    def updateFlightdata(self, flightid, aircraftid, callsign, hexident):
         ''' update flight info after callsign was set '''
         cursor = self.db.cursor()
         sql = "UPDATE flights SET callsign='%s' WHERE ID=%i" %(callsign, flightid)
         logging.debug(sql)
         cursor.execute(sql)
         cursor.close()
-        self.newAircraft(aircraftid, callsign)
+        self.newAircraft(aircraftid, hexident)
         
     def newAircraft(self, aircraftid, hexident):
         ''' new aircraft appears '''
