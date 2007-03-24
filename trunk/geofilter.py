@@ -68,14 +68,18 @@ def main():
     # 243666 no
     # 243689 yes
     # 243824 yes
-    linestring = createLineForFlight(243824)
+    # 244673 no 
+    # 244676 no
+    linestring = createLineForFlight(244676)
     #print "distance?: " + str(geo.Distance(linestring)) #benchmark: 466.047887087
-    #print "intersects?: " + str(geo.Intersect(linestring)) #benchmark: 474.821190119 seconds
+    print "intersects?: " + str(geo.Intersect(linestring)) #benchmark: 474.821190119 seconds
     #print "overlaps?: " + str(geo.Overlaps(linestring)) #benchmark: 466.047887087
-    print "touches?: " + str(geo.Touches(linestring)) #benchmark: 468.383606911
+    #print "touches?: " + str(geo.Touches(linestring)) #benchmark: 468.383606911
     #print "intersects?:" + str(geo.Intersect(polygon))
     #print "within?: " + str(geo.Contains(point))
     print "duration: " + str(time.time() - start)
     
 if __name__ == '__main__':
     main()
+# search for flights which are already out of sight 
+# select count(*) from flightdata where flightid=244678 and time>NOW()-1000;
