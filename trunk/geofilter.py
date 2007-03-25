@@ -87,7 +87,7 @@ class FlightAnalyzer:
                 if longitude >0 and latitude > 0:
                     linestring.AddPoint_2D(float(latitude), float(longitude))
             counter+=1 
-        logging.debug(linestring)
+        #logging.debug(linestring)
         cursor.close()
         logging.debug("pointcount: %i" % linestring.GetPointCount())
         return linestring
@@ -106,16 +106,18 @@ class FlightAnalyzer:
 def main():
     analyzer = FlightAnalyzer()
     cursor = analyzer.db.cursor()
-    sql = "SELECT DISTINCT flightid FROM flightdata WHERE time BETWEEN '2007-03-24 13:00' AND '2007-03-24 14:00'"
+    sql = "SELECT DISTINCT flightid FROM flightdata WHERE time BETWEEN '2007-03-24 14:00' AND '2007-03-24 18:00'"
     cursor.execute(sql)
     rs = cursor.fetchall()
-    analyzer.processFlight(245823)
+    #analyzer.processFlight(245823)
     for record in rs:
         flightid= record[0]
-        #print flightid
-        #analyzer.processFlight(flightid) #245680
+        analyzer.processFlight(flightid) #245680
     
 if __name__ == '__main__':
     main()
     # search for flights which are already out of sight 
     # select count(*) from flightdata where flightid=244678 and time>NOW()-1000;
+
+    # sql-statement for finding all flights not yet geographically classified
+    # SELECT callsign, hexident FROM flights INNER JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE flights.overVlbg IS NULL AND flights.id in (SELECT DISTINCT flightid FROM flightdata WHERE time BETWEEN '2007-03-24 14:00' AND '2007-03-24 18:00');
