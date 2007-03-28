@@ -6,7 +6,6 @@
 # This software listens on this port and stores the information retrieved
 # in a separate database for further processing. (e.g. filtering by geographical criteria)
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
-# $Id$
 import sys
 import telnetlib
 import logging
@@ -14,9 +13,9 @@ import MySQLdb
 
 HOST = "192.168.2.102" # ip-address Basestation is running at
 PORT = 30003 # port 30003 is Basestation's default
-tn = telnetlib.Telnet(HOST, PORT)
+
 # this Python logging facility rocks! :)
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
 class MessageHandler:
     ''' process messages '''
@@ -97,9 +96,9 @@ class MessageHandler:
             transmissiontypes = {1: 'IDMessage', 2: 'SurfacePositionMessage', 3: 'AirbornePositionMessage', 4: 'AirborneVelocityMessage', 5: 'SurveillanceAltMessage', 6: 'SurveillanceIDMessage', 7: 'AirToAirMessage', 8: 'AllCallReply'}
             transmissiontype = mapping.get('transmissiontype')
     
-            logging.info('transmissiontype %i:' %(transmissiontype))
+            logging.debug('transmissiontype %i:' %(transmissiontype))
             for a, b in mapping.items():
-                logging.info('%s: %s' %(a,b))
+                logging.debug('%s: %s' %(a,b))
             
             # split millisecond part from timemessagegenerated
             time_ms = int(mapping.get('timemessagegenerated').split('.')[1])
@@ -133,7 +132,7 @@ class DataCollector:
         ''' flight appears on radar screen for the first time '''
         cursor = self.db.cursor()
         sql = "INSERT DELAYED INTO flights (ID, aircraftid) VALUES (%i, %i)" %(flightid, aircraftid)
-        logging.debug(sql)
+        logging.info(sql)
         cursor.execute(sql)
         cursor.close()
     
@@ -141,7 +140,7 @@ class DataCollector:
         ''' update flight info after callsign was set '''
         cursor = self.db.cursor()
         sql = "UPDATE flights SET callsign='%s' WHERE ID=%i" %(callsign, flightid)
-        logging.debug(sql)
+        logging.info(sql)
         cursor.execute(sql)
         cursor.close()
         self.newAircraft(aircraftid, hexident)
@@ -150,7 +149,7 @@ class DataCollector:
         ''' new aircraft appears '''
         cursor = self.db.cursor()
         sql = "INSERT DELAYED INTO aircrafts (ID, hexident) VALUES (%i, '%s')" % (int(aircraftid), hexident)
-        logging.debug(sql)
+        logging.info(sql)
         try:
             cursor.execute(sql)
         except MySQLdb.IntegrityError, e:
@@ -162,7 +161,7 @@ class DataCollector:
         # get database cursor
         cursor = self.db.cursor()
         sql = "INSERT DELAYED INTO flightdata (flightid, latitude, longitude, time, time_ms, transmissiontype) VALUES (%s, %s, %s, '%s', %i, %i)" %(str(flightid), str(latitude), str(longitude), time, time_ms, transmissiontype)
-        logging.debug(sql)
+        logging.info(sql)
         cursor.execute(sql)
         cursor.close()
     
@@ -170,7 +169,7 @@ class DataCollector:
         ''' store transmission type 4 '''
         cursor = self.db.cursor()
         sql = "INSERT DELAYED INTO airbornevelocitymessage (flightid, groundspeed, verticalrate, track) VALUES (%s, %s, %s, %s)" %(flightid, groundspeed, verticalrate, track)
-        logging.debug(sql)
+        logging.info(sql)
         try:
             cursor.execute(sql)
         except MySQLdb.IntegrityError, e:
@@ -178,6 +177,7 @@ class DataCollector:
         cursor.close()
         
 def main():
+    tn = telnetlib.Telnet(HOST, PORT)
     handler = MessageHandler()
     while 1:
         message = tn.read_until('\n')
