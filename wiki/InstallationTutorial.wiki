@@ -1,0 +1,3 @@
+=Ubuntu=
+
+  * Server install from Ubuntu 6.06 Setup-CD
