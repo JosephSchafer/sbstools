@@ -2,12 +2,15 @@
 # Geo filter experimenting :)
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
 # $Id$
-#import shapelib
 import ogr
 import time
 import MySQLdb
 import logging
+# found this very nice online tool http://www.mapshaper.org to simplify the map
 SHAPEFILE = 'vlbg_wgs84_geogr.shp'
+SHAPEFILE = 'vlbg_wgs84_simplified.shp'
+SHAPEFILE = 'vlbg_wgs84_visvalingam_75.shp'
+#SHAPEFILE = 'vlbg_wgs84_douglas_14.shp'
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
@@ -21,9 +24,14 @@ class FlightAnalyzer:
     
     def __init__(self):
         self.db = MySQLdb.connect(host = self.host, db = self.database, user = self.user, passwd = self.password)
-
+        
+        self.src = ogr.Open(SHAPEFILE)
+        self.layer = self.src.GetLayer()
+        self.feature = self.layer.GetNextFeature()
+        self.geometry = self.feature.GetGeometryRef()
+        
     def processFlight(self, flightid):
-        ''' '''
+        ''' 1. check flight + 2. tag flight'''
         isIntersecting = self.checkFlight(flightid)
         self.tagFlight(flightid, isIntersecting)
     
@@ -38,10 +46,7 @@ class FlightAnalyzer:
         # there is only one shape in the file, so we access it via index 0
         # shape = shapefile.read_object(0)
         
-        src = ogr.Open(SHAPEFILE)
-        layer = src.GetLayer()
-        feature = layer.GetNextFeature()
-        geo = feature.GetGeometryRef()
+      
     
         # benchmark
         start = time.time()
@@ -64,7 +69,7 @@ class FlightAnalyzer:
         #print "within?: " + str(geo.Contains(point))
         
         linestring = self.createFlightLine(flightid)
-        isIntersecting = geo.Intersect(linestring)
+        isIntersecting = self.geometry.Intersect(linestring)
         
         logging.info("flight #%i over vlbg?: %i" %(flightid, isIntersecting))
         logging.info("benchmark: %d seconds" % (time.time() - start))
@@ -106,10 +111,10 @@ class FlightAnalyzer:
 def main():
     analyzer = FlightAnalyzer()
     cursor = analyzer.db.cursor()
-    sql = "SELECT DISTINCT flightid FROM flightdata WHERE time BETWEEN '2007-03-24 14:00' AND '2007-03-24 18:00'"
+    sql = "SELECT DISTINCT flightid FROM flightdata" #WHERE time BETWEEN '2007-03-28 00:00' AND '2007-03-29 23:59'"
     cursor.execute(sql)
     rs = cursor.fetchall()
-    #analyzer.processFlight(245823)
+    #analyzer.processFlight(247785) #THA931 very close touching?
     for record in rs:
         flightid= record[0]
         analyzer.processFlight(flightid) #245680
