@@ -2,5 +2,10 @@
 
 {{{
 # sql-statement for finding all flights not yet geographically classified
-SELECT callsign, hexident FROM flights INNER JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE flights.overVlbg IS NULL AND flights.id in (SELECT DISTINCT flightid FROM flightdata WHERE time BETWEEN '2007-03-24 14:00' AND '2007-03-24 18:00');
+SELECT callsign, hexident FROM flights INNER JOIN aircrafts ON flights.aircraftid=aircrafts.id 
+WHERE flights.overVlbg IS NULL 
+AND flights.id in 
+(SELECT DISTINCT flightid FROM flightdata 
+WHERE time BETWEEN '2007-03-24 14:00' 
+AND '2007-03-24 18:00');
 }}}
