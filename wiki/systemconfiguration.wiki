@@ -2,7 +2,7 @@
 
   * Hardware: Dell Server + connected SBS-1
   * OS: Ubuntu 6.06.1 LTS + VMWare Server running W2K
-  * [Installation Tutorial]
+  * [InstallationTutorial]
 
 ==W2K (running in VMWare Server)==
 
