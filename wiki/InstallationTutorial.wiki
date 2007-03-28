@@ -1,4 +1,4 @@
-=Ubuntu Linux:http://www.ubuntu.com=
+=Ubuntu Linux=
 
   * Server install from Ubuntu 6.06 Setup-CD
   * Installation of openssh, mysql, python-gdal, 686-kernel
