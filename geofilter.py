@@ -85,7 +85,7 @@ def main():
     cursor = analyzer.db.cursor()
     # grab all flights not yet classified geographically
     # and not currently in progress
-    sql = "SELECT id FROM flights WHERE overVlbg IS NULL AND id NOT IN (SELECT DISTINCT flightid from flightdata where time  > NOW() - INTERVAL 15 MINUTE)"
+    sql = "SELECT id FROM flights WHERE overVlbg IS NULL AND id NOT IN (SELECT DISTINCT flightid from flightdata where time  > NOW() - INTERVAL 15 MINUTE) AND ts < NOW() - INTERVAL 10 MINUTE"
     cursor.execute(sql)
     rs = cursor.fetchall()
   
