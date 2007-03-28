@@ -1,4 +1,5 @@
-=Ubuntu=
+=Ubuntu Linux:http://www.ubuntu.com=
 
   * Server install from Ubuntu 6.06 Setup-CD
   * Installation of openssh, mysql, python-gdal, 686-kernel
+  * Setup of VMWare-Server:http://www.howtoforge.com/ubuntu_vmware_server
