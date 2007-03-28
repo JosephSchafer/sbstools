@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # Geo filter experimenting :)
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
-# $Id$
 import ogr
 import time
 import MySQLdb
@@ -34,6 +33,7 @@ class FlightAnalyzer:
         
     def processFlight(self, flightid):
         ''' 1. check flight + 2. tag flight'''
+        
         isIntersecting = self.checkFlight(flightid)
         self.tagFlight(flightid, isIntersecting)
     
@@ -51,25 +51,24 @@ class FlightAnalyzer:
         logging.info("benchmark: %f seconds" % (time.time() - start))
         return isIntersecting
     
-    def createFlightLine(self, flightid, step=1):
+    def createFlightLine(self, flightid):
         """ access geographical database info and create linestring """
+        
         cursor = self.db.cursor()
         sql = "select latitude,longitude from flightdata where flightid=%i" %flightid
         cursor.execute(sql)
         rs = cursor.fetchall()
         
+        # create empty 2-dimensional linestring-object representing a flight route tracked by the SBS-1
         linestring = ogr.Geometry(ogr.wkbLineString)
         linestring.SetCoordinateDimension(2)
-        
-        counter = 0
         for longitude, latitude in rs:
-            if counter % step == 0:
-                #damn important performancewise! skip (0, 0) coordinates!
-                if longitude >0 and latitude > 0:
-                    linestring.AddPoint_2D(float(latitude), float(longitude))
-            counter+=1 
+            #pretty important: skip unnecessary (0, 0) coordinates!
+            if longitude > 0 and latitude > 0:
+                linestring.AddPoint_2D(float(latitude), float(longitude))
         cursor.close()
-        logging.debug("pointcount: %i" % linestring.GetPointCount())
+        
+        logging.info("pointcount: %i" % linestring.GetPointCount())
         return linestring
     
     def tagFlight(self, flightid, overVlbg=0):
@@ -80,20 +79,19 @@ class FlightAnalyzer:
         logging.info(sql)
         cursor.execute(sql)
         cursor.close()
-        
-    
     
 def main():
     analyzer = FlightAnalyzer()
     cursor = analyzer.db.cursor()
-    sql = "SELECT DISTINCT flightid FROM flightdata" #WHERE time BETWEEN '2007-03-28 00:00' AND '2007-03-29 23:59'"
+    # grab all flights not yet classified geographically
+    sql = "SELECT id FROM flights WHERE overVlbg IS NULL"
     cursor.execute(sql)
     rs = cursor.fetchall()
   
     # loop over all flights retrieved by sql statement and process it
     for record in rs:
         flightid= record[0]
-        analyzer.processFlight(flightid) #245680
+        analyzer.processFlight(flightid)
     
 if __name__ == '__main__':
     main()
