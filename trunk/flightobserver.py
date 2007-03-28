@@ -138,6 +138,8 @@ class DataCollector:
     
     def updateFlightdata(self, flightid, aircraftid, callsign, hexident):
         ''' update flight info after callsign was set '''
+        
+        # __FIXME__: UDPATE cannot be delayed, which is a problem when a transaction is in progress and may messages are skipped
         cursor = self.db.cursor()
         sql = "UPDATE flights SET callsign='%s' WHERE ID=%i" %(callsign, flightid)
         logging.info(sql)
