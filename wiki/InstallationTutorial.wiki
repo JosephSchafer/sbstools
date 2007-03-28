@@ -1,3 +1,4 @@
 =Ubuntu=
 
   * Server install from Ubuntu 6.06 Setup-CD
+  * Installation of openssh, mysql, python-gdal, 686-kernel
