@@ -27,7 +27,7 @@ CREATE TABLE `airbornevelocitymessage` (
   `verticalrate` smallint(6) default NULL,
   `track` smallint(5) unsigned default NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2423999 DEFAULT CHARSET=latin1;
+) ENGINE=MyISAM AUTO_INCREMENT=2595133 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `aircrafts`
@@ -53,8 +53,9 @@ CREATE TABLE `flightdata` (
   `time` datetime default NULL,
   `time_ms` smallint(5) unsigned default NULL,
   `transmissiontype` tinyint(3) unsigned default NULL,
-  PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2301723 DEFAULT CHARSET=latin1;
+  PRIMARY KEY  (`id`),
+  KEY `time` (`time`)
+) ENGINE=MyISAM AUTO_INCREMENT=2465698 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `flights`
