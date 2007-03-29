@@ -27,7 +27,7 @@ CREATE TABLE `airbornevelocitymessage` (
   `verticalrate` smallint(6) default NULL,
   `track` smallint(5) unsigned default NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=3092307 DEFAULT CHARSET=latin1;
+) ENGINE=innoDB AUTO_INCREMENT=3092307 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `aircrafts`
@@ -38,7 +38,7 @@ CREATE TABLE `aircrafts` (
   `id` bigint(20) unsigned NOT NULL,
   `hexident` varchar(6) default NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=innoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `flightdata`
@@ -55,7 +55,7 @@ CREATE TABLE `flightdata` (
   `transmissiontype` tinyint(3) unsigned default NULL,
   PRIMARY KEY  (`id`),
   KEY `time` (`time`)
-) ENGINE=MyISAM AUTO_INCREMENT=2938141 DEFAULT CHARSET=latin1;
+) ENGINE=innoDB AUTO_INCREMENT=2938141 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `flights`
@@ -72,7 +72,7 @@ CREATE TABLE `flights` (
   KEY `aircraftid` (`aircraftid`),
   KEY `overvlbg` (`overvlbg`),
   KEY `ts` (`ts`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=innoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `kexi__blobs`
@@ -87,7 +87,7 @@ CREATE TABLE `kexi__blobs` (
   `o_mime` varchar(200) NOT NULL,
   `o_folder_id` int(10) unsigned default NULL,
   PRIMARY KEY  (`o_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=innoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `kexi__db`
@@ -97,7 +97,7 @@ DROP TABLE IF EXISTS `kexi__db`;
 CREATE TABLE `kexi__db` (
   `db_property` varchar(32) default NULL,
   `db_value` longtext
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=innoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `kexi__fields`
@@ -116,7 +116,7 @@ CREATE TABLE `kexi__fields` (
   `f_order` int(11) default NULL,
   `f_caption` varchar(200) default NULL,
   `f_help` longtext
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=innoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `kexi__objectdata`
@@ -127,7 +127,7 @@ CREATE TABLE `kexi__objectdata` (
   `o_id` int(10) unsigned NOT NULL,
   `o_data` blob,
   `o_sub_id` varchar(200) default NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=innoDB DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `kexi__objects`
@@ -141,7 +141,7 @@ CREATE TABLE `kexi__objects` (
   `o_caption` varchar(200) default NULL,
   `o_desc` longtext,
   PRIMARY KEY  (`o_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
+) ENGINE=innoDB AUTO_INCREMENT=6 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `kexi__parts`
@@ -154,7 +154,7 @@ CREATE TABLE `kexi__parts` (
   `p_mime` varchar(200) default NULL,
   `p_url` varchar(200) default NULL,
   PRIMARY KEY  (`p_id`)
-) ENGINE=MyISAM AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
+) ENGINE=innoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
