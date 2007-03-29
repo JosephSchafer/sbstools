@@ -134,6 +134,7 @@ class DataCollector:
         sql = "INSERT INTO flights (ID, aircraftid) VALUES (%i, %i)" %(flightid, aircraftid)
         logging.info(sql)
         cursor.execute(sql)
+	cursor.execute("COMMIT")
         cursor.close()
     
     def updateFlightdata(self, flightid, aircraftid, callsign, hexident):
@@ -143,7 +144,9 @@ class DataCollector:
         cursor = self.db.cursor()
         sql = "UPDATE flights SET callsign='%s' WHERE ID=%i" %(callsign, flightid)
         logging.info(sql)
+	cursor.execute("SET AUTOCOMMIT = 0")
         cursor.execute(sql)
+	cursor.execute("COMMIT")
         cursor.close()
         self.newAircraft(aircraftid, hexident)
         
