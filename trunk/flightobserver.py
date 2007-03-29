@@ -131,7 +131,7 @@ class DataCollector:
     def logNewFlight(self, flightid, aircraftid):
         ''' flight appears on radar screen for the first time '''
         cursor = self.db.cursor()
-        sql = "INSERT DELAYED INTO flights (ID, aircraftid) VALUES (%i, %i)" %(flightid, aircraftid)
+        sql = "INSERT INTO flights (ID, aircraftid) VALUES (%i, %i)" %(flightid, aircraftid)
         logging.info(sql)
         cursor.execute(sql)
         cursor.close()
@@ -150,7 +150,7 @@ class DataCollector:
     def newAircraft(self, aircraftid, hexident):
         ''' new aircraft appears '''
         cursor = self.db.cursor()
-        sql = "INSERT DELAYED INTO aircrafts (ID, hexident) VALUES (%i, '%s')" % (int(aircraftid), hexident)
+        sql = "INSERT INTO aircrafts (ID, hexident) VALUES (%i, '%s')" % (int(aircraftid), hexident)
         logging.info(sql)
         try:
             cursor.execute(sql)
@@ -162,7 +162,7 @@ class DataCollector:
         """ store data in mysql """
         # get database cursor
         cursor = self.db.cursor()
-        sql = "INSERT DELAYED INTO flightdata (flightid, latitude, longitude, time, time_ms, transmissiontype) VALUES (%s, %s, %s, '%s', %i, %i)" %(str(flightid), str(latitude), str(longitude), time, time_ms, transmissiontype)
+        sql = "INSERT INTO flightdata (flightid, latitude, longitude, time, time_ms, transmissiontype) VALUES (%s, %s, %s, '%s', %i, %i)" %(str(flightid), str(latitude), str(longitude), time, time_ms, transmissiontype)
         logging.info(sql)
         cursor.execute(sql)
         cursor.close()
@@ -170,7 +170,7 @@ class DataCollector:
     def logAirborneVelocityMessage(self, flightid, groundspeed, verticalrate, track):
         ''' store transmission type 4 '''
         cursor = self.db.cursor()
-        sql = "INSERT DELAYED INTO airbornevelocitymessage (flightid, groundspeed, verticalrate, track) VALUES (%s, %s, %s, %s)" %(flightid, groundspeed, verticalrate, track)
+        sql = "INSERT INTO airbornevelocitymessage (flightid, groundspeed, verticalrate, track) VALUES (%s, %s, %s, %s)" %(flightid, groundspeed, verticalrate, track)
         logging.info(sql)
         try:
             cursor.execute(sql)
