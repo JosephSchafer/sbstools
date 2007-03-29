@@ -5,3 +5,4 @@
   * Setup of VMWare-Server:http://www.howtoforge.com/ubuntu_vmware_server
 
   * GRANT INSERT, SELECT, UPDATE ON flightdb.* to 'flight'@'localhost' IDENTIFIED BY 'flyaway';
+  * /etc/mysql/my.cnf -  add max_connections = 500
