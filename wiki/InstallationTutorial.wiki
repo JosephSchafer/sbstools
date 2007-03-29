@@ -6,3 +6,8 @@
 
   * GRANT INSERT, SELECT, UPDATE ON flightdb.* to 'flight'@'localhost' IDENTIFIED BY 'flyaway';
   * /etc/mysql/my.cnf -  add max_connections = 500
+
+=Windows=
+
+  * Install Kinetics-software
+  * Download FTD2XX.dll http://www.sidena.com/En_download.htm and install it.
