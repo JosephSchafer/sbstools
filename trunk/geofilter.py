@@ -11,7 +11,7 @@ import logging
 #SHAPEFILE = 'vlbg_wgs84_geogr.shp'
 #SHAPEFILE = 'vlbg_wgs84_simplified.shp'
 #SHAPEFILE = 'vlbg_wgs84_visvalingam_75.shp'
-SHAPEFILE = 'vlbg_wgs84_douglas_14.shp'
+SHAPEFILE = 'data/vlbg_wgs84_douglas_14.shp'
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
