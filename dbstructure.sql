@@ -21,7 +21,7 @@
 
 DROP TABLE IF EXISTS `airbornevelocitymessage`;
 CREATE TABLE `airbornevelocitymessage` (
-  `id` bigint(20) unsigned NOT NULL auto_increment,
+  `id` int(10) unsigned NOT NULL auto_increment,
   `flightid` int(10) unsigned default NULL,
   `groundspeed` smallint(5) unsigned default NULL,
   `verticalrate` smallint(6) default NULL,
@@ -35,7 +35,7 @@ CREATE TABLE `airbornevelocitymessage` (
 
 DROP TABLE IF EXISTS `aircrafts`;
 CREATE TABLE `aircrafts` (
-  `id` bigint(20) unsigned NOT NULL,
+  `id` int(10) unsigned NOT NULL auto_increment,
   `hexident` varchar(6) default NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -46,7 +46,7 @@ CREATE TABLE `aircrafts` (
 
 DROP TABLE IF EXISTS `flightdata`;
 CREATE TABLE `flightdata` (
-  `id` bigint(20) unsigned NOT NULL auto_increment,
+  `id` int(10) unsigned NOT NULL auto_increment,
   `latitude` float default NULL,
   `longitude` float default NULL,
   `flightid` int(10) unsigned default NULL,
@@ -64,7 +64,7 @@ CREATE TABLE `flightdata` (
 
 DROP TABLE IF EXISTS `flights`;
 CREATE TABLE `flights` (
-  `id` bigint(20) unsigned NOT NULL,
+  `id` int(10) unsigned NOT NULL auto_increment,
   `aircraftid` int(11) default NULL,
   `callsign` varchar(20) default NULL,
   `overvlbg` tinyint(1) default NULL,
