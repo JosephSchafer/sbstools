@@ -11,7 +11,7 @@ import telnetlib
 import logging
 import MySQLdb
 
-HOST = "192.168.2.102" # ip-address Basestation is running at
+HOST = "192.168.2.110" # ip-address Basestation is running at
 PORT = 30003 # port 30003 is Basestation's default
 
 # this Python logging facility rocks! :)
@@ -144,7 +144,7 @@ class DataCollector:
         cursor = self.db.cursor()
         sql = "UPDATE flights SET callsign='%s' WHERE ID=%i" %(callsign, flightid)
         logging.info(sql)
-	cursor.execute("SET AUTOCOMMIT = 0")
+	cursor.execute("SET AUTOCOMMIT = 1")
         cursor.execute(sql)
 	cursor.execute("COMMIT")
         cursor.close()
@@ -157,6 +157,7 @@ class DataCollector:
         logging.info(sql)
         try:
             cursor.execute(sql)
+	    cursor.execute('COMMIT')
         except MySQLdb.IntegrityError, e:
             logging.warn(str(e))
         cursor.close()
@@ -168,6 +169,7 @@ class DataCollector:
         sql = "INSERT INTO flightdata (flightid, latitude, longitude, time, time_ms, transmissiontype) VALUES (%s, %s, %s, '%s', %i, %i)" %(str(flightid), str(latitude), str(longitude), time, time_ms, transmissiontype)
         logging.info(sql)
         cursor.execute(sql)
+	cursor.execute('COMMIT')
         cursor.close()
     
     def logAirborneVelocityMessage(self, flightid, groundspeed, verticalrate, track):
@@ -177,6 +179,7 @@ class DataCollector:
         logging.info(sql)
         try:
             cursor.execute(sql)
+	    cursor.execute('COMMIT')
         except MySQLdb.IntegrityError, e:
             logger.warn(str(e))
         cursor.close()
