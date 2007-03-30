@@ -1,0 +1,3 @@
+=Optimiziations=
+
+  * check field types of database: Is it really necessary to use BIGINT for primary key fields?
