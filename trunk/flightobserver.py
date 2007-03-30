@@ -7,6 +7,7 @@
 # in a separate database for further processing. (e.g. filtering by geographical criteria)
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
 import sys
+import os
 import telnetlib
 import logging
 import MySQLdb
@@ -14,8 +15,11 @@ import MySQLdb
 HOST = "192.168.2.110" # ip-address Basestation is running at
 PORT = 30003 # port 30003 is Basestation's default
 
+LOGFILE = '/var/log/pyflightobserver.log'
+PIDFILE = '/var/run/pyflightobserver.pid'
+
 # this Python logging facility rocks! :)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s', filename='/tmp/flightobserver.log', filemode='w')
 
 class MessageHandler:
     ''' process messages '''
@@ -193,4 +197,34 @@ def main():
         handler.processMessage(message)
 
 if __name__ == '__main__':
+    # do the UNIX double-fork magic, see Stevens' "Advanced
+    # Programming in the UNIX Environment" for details (ISBN 0201563177)
+    try:
+        pid = os.fork()
+        if pid > 0:
+            # exit first parent
+            open(PIDFILE, 'w').write("%d"%pid)
+            sys.exit(0)
+    except OSError, e:
+        print >>sys.stderr, "fork #1 failed: %d (%s)" % (e.errno, e.strerror)
+        sys.exit(1)
+
+    # decouple from parent environment
+    os.chdir("/")   #don't prevent unmounting....
+    os.setsid()
+    os.umask(0)
+
+    # do second fork
+    #try:
+    #    pid = os.fork()
+    #    if pid > 0:
+    #        # exit from second parent, print eventual PID before
+    #        #print "Daemon PID %d" % pid
+    #        open(PIDFILE,'w').write("%d"%pid)
+    #        sys.exit(0)
+    #except OSError, e:
+    #    print >>sys.stderr, "fork #2 failed: %d (%s)" % (e.errno, e.strerror)
+    #    sys.exit(1)
+
+    # start the daemon main loop
     main()
