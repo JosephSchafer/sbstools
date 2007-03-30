@@ -3,7 +3,7 @@
   * Server install from Ubuntu 6.06 Setup-CD
   * Installation of openssh, mysql, python-gdal, 686-kernel
   * Setup of VMWare-Server:http://www.howtoforge.com/ubuntu_vmware_server
-  * Manual installation of "gdal 1.4":http://www.gdal.org
+  * Manual download, compilation and installation of gdal:http://www.gdal.org (version 1.4.0)
 
  ==mysql==
 
