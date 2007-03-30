@@ -78,6 +78,7 @@ class FlightAnalyzer:
         sql = "UPDATE flights SET overvlbg=%i WHERE id=%i" %(overVlbg, flightid)
         logging.info(sql)
         cursor.execute(sql)
+	cursor.execute('COMMIT')
         cursor.close()
     
 def main():
