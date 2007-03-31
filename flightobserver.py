@@ -9,8 +9,10 @@
 import sys
 import os
 import telnetlib
+import socket
 import logging
 import MySQLdb
+import time
 
 HOST = "192.168.2.110" # ip-address Basestation is running at
 PORT = 30003 # port 30003 is Basestation's default
@@ -189,7 +191,17 @@ class DataCollector:
         cursor.close()
         
 def main():
-    tn = telnetlib.Telnet(HOST, PORT)
+
+    # try several times to connect to host
+    # W2K running in VMWare Server takes some time to boot itself 
+    for i in range(4):
+        try:
+            tn = telnetlib.Telnet(HOST, PORT)
+        except socket.error:
+            time.sleep(40)
+        else:
+            break 
+
     handler = MessageHandler()
     while 1:
         message = tn.read_until('\n')
@@ -213,18 +225,6 @@ if __name__ == '__main__':
     os.chdir("/")   #don't prevent unmounting....
     os.setsid()
     os.umask(0)
-
-    # do second fork
-    #try:
-    #    pid = os.fork()
-    #    if pid > 0:
-    #        # exit from second parent, print eventual PID before
-    #        #print "Daemon PID %d" % pid
-    #        open(PIDFILE,'w').write("%d"%pid)
-    #        sys.exit(0)
-    #except OSError, e:
-    #    print >>sys.stderr, "fork #2 failed: %d (%s)" % (e.errno, e.strerror)
-    #    sys.exit(1)
 
     # start the daemon main loop
     main()
