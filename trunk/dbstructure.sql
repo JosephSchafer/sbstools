@@ -69,7 +69,7 @@ CREATE TABLE `flights` (
   `aircraftid` int(11) default NULL,
   `callsign` varchar(20) default NULL,
   `overvlbg` tinyint(1) default NULL,
-  `ts` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+  `ts` timestamp NOT NULL default CURRENT_TIMESTAMP,
   PRIMARY KEY  (`id`),
   KEY `aircraftid` (`aircraftid`),
   KEY `overvlbg` (`overvlbg`),
