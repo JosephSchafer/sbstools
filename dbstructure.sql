@@ -55,7 +55,8 @@ CREATE TABLE `flightdata` (
   `transmissiontype` tinyint(3) unsigned default NULL,
   `altitude` smallint(5) unsigned NOT NULL,
   PRIMARY KEY  (`id`),
-  KEY `time` (`time`)
+  KEY `time` (`time`),
+  KEY `flightid` (`flightid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
