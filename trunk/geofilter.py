@@ -55,7 +55,7 @@ class FlightAnalyzer:
         """ access geographical database info and create linestring """
         
         cursor = self.db.cursor()
-        sql = "select latitude,longitude from flightdata where flightid=%i" %flightid
+        sql = "SELECT latitude,longitude FROM flightdata WHERE flightid=%i" %flightid
         cursor.execute(sql)
         rs = cursor.fetchall()
         
@@ -78,7 +78,17 @@ class FlightAnalyzer:
         sql = "UPDATE flights SET overvlbg=%i WHERE id=%i" %(overVlbg, flightid)
         logging.info(sql)
         cursor.execute(sql)
-	cursor.execute('COMMIT')
+	self.db.commit()
+        cursor.close()
+    
+    def tagFlights(self, flightids, overVlbg=0):
+        ''' set flag for flight in db '''
+        
+        cursor = self.db.cursor()
+        sql = "UPDATE flights SET overvlbg=%i WHERE id IN %s" %(overVlbg, str(tuple(flightids)))
+        logging.info(sql)
+        #cursor.execute(sql)
+	#self.db.commit()
         cursor.close()
     
 def main():
@@ -86,14 +96,24 @@ def main():
     cursor = analyzer.db.cursor()
     # grab all flights not yet classified geographically
     # and not currently in progress
-    sql = "SELECT id FROM flights WHERE overVlbg IS NULL AND id NOT IN (SELECT DISTINCT flightid from flightdata where time  > NOW() - INTERVAL 15 MINUTE) AND ts < NOW() - INTERVAL 10 MINUTE"
+    # NOTE: new flights appear in realtime, other messages are 5 minutes delayed
+    # -> 1. only check flights which were entered more than 6 minutes ago
+    # -> 2. only check flights where the most recent flightdata is older than 6 minutes
+    sql = "SELECT id FROM flights WHERE overVlbg IS NULL AND ts < NOW()-INTERVAL 6 MINUTE AND id NOT IN (SELECT DISTINCT flightid from flightdata where time  > NOW() - INTERVAL 6 MINUTE)"
     cursor.execute(sql)
     rs = cursor.fetchall()
-  
-    # loop over all flights retrieved by sql statement and process it
+ 
+    check = {0:[], 1:[]}
+    # loop over all flights and check'em 
     for record in rs:
         flightid= record[0]
-        analyzer.processFlight(flightid)
-    
+        overVlbg = analyzer.checkFlight(flightid)
+ 	check.get(overVlbg).append(flightid)
+
+    for key in check.keys():
+        analyzer.tagFlights(check.get(key).values(), key)
+ 
+    cursor.close() 
+ 
 if __name__ == '__main__':
     main()

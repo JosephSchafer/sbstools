@@ -23,7 +23,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(mess
 
 class MessageHandler:
     ''' process messages '''
-    
+   
+    def __init__(self):
+        self.collector = DataCollector()
+ 
     def _createMap(self, msgparts, fields):
         ''' map msg parts to fields '''
         mapping = dict(zip(fields, msgparts))
@@ -44,7 +47,6 @@ class MessageHandler:
             pass
             
         elif msgtype == 'AIR':
-            collector = DataCollector()
             # new aircraft appears in the right-handed aircraft list for the first time
             # Q: what about if aircraft disappears for some seconds?
             fields = ['msgtype', '-', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged']
@@ -53,10 +55,9 @@ class MessageHandler:
             
             flightid = int(mapping.get('flightid'))
             aircraftid = int(mapping.get('aircraftid'))
-            collector.logNewFlight(flightid, aircraftid)
+            self.collector.logNewFlight(flightid, aircraftid)
         
         elif msgtype == 'ID':
-            collector = DataCollector()
             # when an aircraft changes or sets its callsign.
             fields = ['msgtype', '-', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged', 'callsign']
             mapping = self._createMap(parts, fields)
@@ -66,10 +67,9 @@ class MessageHandler:
             hexident = mapping.get('hexident')
             callsign = mapping.get('callsign')
             flightid = int(mapping.get('flightid'))
-            collector.updateFlightdata(flightid, aircraftid, callsign, hexident)
+            self.collector.updateFlightdata(flightid, aircraftid, callsign, hexident)
     
         elif msgtype == 'MSG':
-            collector = DataCollector()
             # delayed output of every message from aircraft
             fields = ['msgtype', 'transmissiontype', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged', 'callsign', 'altitude', 'groundspeed', 'track', 'lat', 'long', 'verticalrate', 'squawk', 'alert', 'emergency', 'spi', 'isonground']
             mapping = self._createMap(parts, fields)
@@ -110,12 +110,12 @@ class MessageHandler:
             if transmissiontype in [2, 3]:
                 logging.debug('lat: %f' %mapping.get('lat'))
                 logging.debug('long: %f' %mapping.get('long'))
-                collector.logFlightdata(mapping.get('flightid'), mapping.get('altitude'), mapping.get('lat'), mapping.get('long'), mapping.get('datemessagegenerated') + ' ' + mapping.get('timemessagegenerated'), time_ms, transmissiontype)
+                self.collector.logFlightdata(mapping.get('flightid'), mapping.get('altitude'), mapping.get('lat'), mapping.get('long'), mapping.get('datemessagegenerated') + ' ' + mapping.get('timemessagegenerated'), time_ms, transmissiontype)
             elif transmissiontype == 1:
                 logging.debug('callsign: %s' %mapping.get('callsign'))
             elif transmissiontype == 4:
                 logging.debug('track: %s' %mapping.get('track'))
-                collector.logAirborneVelocityMessage(mapping.get('flightid'), mapping.get('groundspeed'), mapping.get('verticalrate'), mapping.get('track'))
+                self.collector.logAirborneVelocityMessage(mapping.get('flightid'), mapping.get('groundspeed'), mapping.get('verticalrate'), mapping.get('track'))
         else:
             # unknown msgtype!
             pass
@@ -138,7 +138,7 @@ class DataCollector:
         sql = "INSERT INTO flights (ID, aircraftid) VALUES (%i, %i)" %(flightid, aircraftid)
         logging.info(sql)
         cursor.execute(sql)
-	cursor.execute("COMMIT")
+	self.db.commit()
         cursor.close()
     
     def updateFlightdata(self, flightid, aircraftid, callsign, hexident):
@@ -150,7 +150,7 @@ class DataCollector:
         logging.info(sql)
 	cursor.execute("SET AUTOCOMMIT = 1")
         cursor.execute(sql)
-	cursor.execute("COMMIT")
+	self.db.commit()
         cursor.close()
         self.newAircraft(aircraftid, hexident)
         
@@ -161,7 +161,7 @@ class DataCollector:
         logging.info(sql)
         try:
             cursor.execute(sql)
-	    cursor.execute('COMMIT')
+	    self.db.commit()
         except MySQLdb.IntegrityError, e:
             logging.warn(str(e))
         cursor.close()
@@ -173,7 +173,7 @@ class DataCollector:
         sql = "INSERT INTO flightdata (flightid, altitude, latitude, longitude, time, time_ms, transmissiontype) VALUES (%s, %s, %s, %s, '%s', %i, %i)" %(str(flightid), str(altitude), str(latitude), str(longitude), time, time_ms, transmissiontype)
         logging.info(sql)
         cursor.execute(sql)
-	cursor.execute('COMMIT')
+	self.db.commit();
         cursor.close()
     
     def logAirborneVelocityMessage(self, flightid, groundspeed, verticalrate, track):
@@ -183,7 +183,7 @@ class DataCollector:
         logging.info(sql)
         try:
             cursor.execute(sql)
-	    cursor.execute('COMMIT')
+	    self.db.commit()
         except MySQLdb.IntegrityError, e:
             logger.warn(str(e))
         cursor.close()
