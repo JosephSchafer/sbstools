@@ -8,9 +8,6 @@ import logging
 
 # found this very nice online tool http://www.mapshaper.org to simplify the map
 # now the map should be available to the public as well
-#SHAPEFILE = 'vlbg_wgs84_geogr.shp'
-#SHAPEFILE = 'vlbg_wgs84_simplified.shp'
-#SHAPEFILE = 'vlbg_wgs84_visvalingam_75.shp'
 SHAPEFILE = 'data/vlbg_wgs84_douglas_14.shp'
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
@@ -81,16 +78,6 @@ class FlightAnalyzer:
 	self.db.commit()
         cursor.close()
     
-    def tagFlights(self, flightids, overVlbg=0):
-        ''' set flag for flight in db '''
-        
-        cursor = self.db.cursor()
-        sql = "UPDATE flights SET overvlbg=%i WHERE id IN %s" %(overVlbg, str(tuple(flightids)))
-        logging.info(sql)
-        #cursor.execute(sql)
-	#self.db.commit()
-        cursor.close()
-    
 def main():
     analyzer = FlightAnalyzer()
     cursor = analyzer.db.cursor()
@@ -99,20 +86,15 @@ def main():
     # NOTE: new flights appear in realtime, other messages are 5 minutes delayed
     # -> 1. only check flights which were entered more than 6 minutes ago
     # -> 2. only check flights where the most recent flightdata is older than 6 minutes
-    sql = "SELECT id FROM flights WHERE overVlbg IS NULL AND ts < NOW()-INTERVAL 6 MINUTE AND id NOT IN (SELECT DISTINCT flightid from flightdata where time  > NOW() - INTERVAL 6 MINUTE)"
+    sql = "SELECT id FROM flights WHERE overVlbg IS NULL AND ts < NOW()-INTERVAL 6 MINUTE AND id NOT IN (SELECT DISTINCT flightid FROM flightdata WHERE time  > NOW() - INTERVAL 6 MINUTE)"
     cursor.execute(sql)
     rs = cursor.fetchall()
  
-    check = {0:[], 1:[]}
     # loop over all flights and check'em 
     for record in rs:
-        flightid= record[0]
-        overVlbg = analyzer.checkFlight(flightid)
- 	check.get(overVlbg).append(flightid)
+        flightid = record[0]
+        analyzer.processFlight(flightid)
 
-    for key in check.keys():
-        analyzer.tagFlights(check.get(key).values(), key)
- 
     cursor.close() 
  
 if __name__ == '__main__':
