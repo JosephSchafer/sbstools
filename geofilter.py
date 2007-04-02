@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Geo filter experimenting :)
+# Applying geo-operations to flights
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
 import ogr
 import time
@@ -7,7 +7,7 @@ import MySQLdb
 import logging
 
 # found this very nice online tool http://www.mapshaper.org to simplify the map
-# now the map should be available to the public as well
+# the simpliefied map is made public 
 SHAPEFILE = 'data/vlbg_wgs84_douglas_14.shp'
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
