@@ -79,6 +79,7 @@ class FlightAnalyzer:
         cursor.close()
     
 def main():
+    logging.info("### GEOFILTER started")
     analyzer = FlightAnalyzer()
     cursor = analyzer.db.cursor()
     # grab all flights not yet classified geographically
@@ -96,6 +97,7 @@ def main():
         analyzer.processFlight(flightid)
 
     cursor.close() 
+    logging.info("### GEOFILTER finished")
  
 if __name__ == '__main__':
     main()
