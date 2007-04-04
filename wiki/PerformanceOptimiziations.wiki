@@ -7,4 +7,4 @@
 
   every day the database grows by ~100MB
 
-  * reduce flight data to about 10% for flights not crossing Vorarlberg
+  * reduce flight data by about 90% for flights not crossing Vorarlberg
