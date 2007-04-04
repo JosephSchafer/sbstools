@@ -192,21 +192,30 @@ class DataCollector:
         
 def main():
 
+    wait = 20
     # try several times to connect to host
-    # W2K running in VMWare Server takes some time to boot itself 
-    for i in range(4):
-        try:
-            tn = telnetlib.Telnet(HOST, PORT)
-        except socket.error:
-            time.sleep(40)
-        else:
-            break 
-
-    handler = MessageHandler()
+    # Win running in VMWare Server takes some time to boot itself 
+    # 2007-04-04 bugfix: don't crash when connection to telnet is lost (e.g. Win auto-updates)
     while 1:
-        message = tn.read_until('\n')
-        message = message.replace("\r\n", "")
-        handler.processMessage(message)
+        while 1:
+            try:
+                tn = telnetlib.Telnet(HOST, PORT)
+            except socket.error, e:
+                logging.warn("cannot open telnet connection %s" %str(e))
+                logging.info("sleeping for %i seconds" % wait)
+                time.sleep(wait)
+            else:
+                break
+        
+        handler = MessageHandler()
+        while 1:
+            try:
+                message = tn.read_until('\n')
+                message = message.replace("\r\n", "")
+                handler.processMessage(message)
+            except EOFError, e:
+                logging.warn("lost telnet connection %s" %str(e))
+                break
 
 if __name__ == '__main__':
     # do the UNIX double-fork magic, see Stevens' "Advanced
@@ -227,4 +236,7 @@ if __name__ == '__main__':
     os.umask(0)
 
     # start the daemon main loop
-    main()
+    try:
+        main()
+    except Exception, e:
+        logging.warn(str(e))
