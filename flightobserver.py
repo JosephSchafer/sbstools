@@ -17,11 +17,11 @@ import time
 HOST = "192.168.2.110" # ip-address Basestation is running at
 PORT = 30003 # port 30003 is Basestation's default
 
-LOGFILE = '/var/log/pyflightobserver.log'
+LOGFILE = '/var/log/flightobserver.log'
 PIDFILE = '/var/run/pyflightobserver.pid'
 
 # this Python logging facility rocks! :)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s', filename='/tmp/flightobserver.log', filemode='w')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s', filename=LOGFILE, filemode='w+')
 
 class MessageHandler:
     ''' process messages '''
@@ -193,6 +193,7 @@ class DataCollector:
 def main():
 
     wait = 20
+    logging.info("starting daemon")
     # try several times to connect to host
     # Win running in VMWare Server takes some time to boot itself 
     # 2007-04-04 bugfix: don't crash when connection to telnet is lost (e.g. Win auto-updates)
