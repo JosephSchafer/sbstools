@@ -239,4 +239,4 @@ if __name__ == '__main__':
     try:
         main()
     except Exception, e:
-        logging.warn(str(e))
+        logging.error("application terminated :( %s" %str(e))
