@@ -8,3 +8,18 @@
   every day the database grows by ~100MB
 
   * reduce flight data by about 90% for flights not crossing Vorarlberg
+  {{{
+  SELECT id FROM flights WHERE overVlbg=0 AND status=0
+  
+  num = 5
+  ids = [...]
+  removeableids = []
+  for id in ids:
+     if id % num != 0:
+        removeableids.append(ids[i])
+  if ids[-1] in removeableids:
+     removeableids.remove(ids[-1])
+
+
+  UPDATE flights SET status=1 WHERE id IN (flights)
+  }}}
