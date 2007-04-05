@@ -153,7 +153,7 @@ class DataCollector:
         sql = "INSERT INTO flights (ID, aircraftid) VALUES (%i, %i)" %(flightid, aircraftid)
         logging.info(sql)
         cursor.execute(sql)
-    self.db.commit()
+        self.db.commit()
         cursor.close()
     
     def updateFlightdata(self, flightid, aircraftid, callsign, hexident):
@@ -163,9 +163,9 @@ class DataCollector:
         cursor = self.db.cursor()
         sql = "UPDATE flights SET callsign='%s' WHERE ID=%i" %(callsign, flightid)
         logging.info(sql)
-    cursor.execute("SET AUTOCOMMIT = 1")
+        cursor.execute("SET AUTOCOMMIT = 1")
         cursor.execute(sql)
-    self.db.commit()
+        self.db.commit()
         cursor.close()
         self.newAircraft(aircraftid, hexident)
         
@@ -176,7 +176,7 @@ class DataCollector:
         logging.info(sql)
         try:
             cursor.execute(sql)
-        self.db.commit()
+            self.db.commit()
         except MySQLdb.IntegrityError, e:
             logging.warn(str(e))
         cursor.close()
@@ -188,7 +188,7 @@ class DataCollector:
         sql = "INSERT INTO flightdata (flightid, altitude, latitude, longitude, time, time_ms, transmissiontype) VALUES (%s, %s, %s, %s, '%s', %i, %i)" %(str(flightid), str(altitude), str(latitude), str(longitude), time, time_ms, transmissiontype)
         logging.info(sql)
         cursor.execute(sql)
-    self.db.commit();
+        self.db.commit();
         cursor.close()
     
     def logAirborneVelocityMessage(self, flightid, groundspeed, verticalrate, track):
@@ -198,7 +198,7 @@ class DataCollector:
         logging.info(sql)
         try:
             cursor.execute(sql)
-        self.db.commit()
+            self.db.commit()
         except MySQLdb.IntegrityError, e:
             logger.warn(str(e))
         cursor.close()
