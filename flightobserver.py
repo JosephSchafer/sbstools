@@ -11,6 +11,7 @@ import os
 import telnetlib
 import socket
 import logging
+from logging import handlers
 import MySQLdb
 import time
 
@@ -20,8 +21,20 @@ PORT = 30003 # port 30003 is Basestation's default
 LOGFILE = '/var/log/flightobserver.log'
 PIDFILE = '/var/run/pyflightobserver.pid'
 
-# this Python logging facility rocks! :)
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s', filename=LOGFILE, filemode='w+')
+def setupLogging():
+    ''' set up the Python logging facility '''
+    
+    # the Python logging facility rocks! :)
+    # define a Handler which writes INFO messages or higher to a file which is rotated when it reaches 50MB
+    handler = handlers.RotatingFileHandler(LOGFILE, maxBytes = 50 * 1024 * 1024, backupCount=7)
+    # set a nice format
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    # tell the handler to use this format
+    handler.setFormatter(formatter)
+    # add the handler to the root logger
+    logger = logging.getLogger('')
+    logger.setLevel(logging.INFO)
+    logging.getLogger('').addHandler(handler)
 
 class MessageHandler:
     ''' process messages '''
@@ -140,7 +153,7 @@ class DataCollector:
         sql = "INSERT INTO flights (ID, aircraftid) VALUES (%i, %i)" %(flightid, aircraftid)
         logging.info(sql)
         cursor.execute(sql)
-	self.db.commit()
+    self.db.commit()
         cursor.close()
     
     def updateFlightdata(self, flightid, aircraftid, callsign, hexident):
@@ -150,9 +163,9 @@ class DataCollector:
         cursor = self.db.cursor()
         sql = "UPDATE flights SET callsign='%s' WHERE ID=%i" %(callsign, flightid)
         logging.info(sql)
-	cursor.execute("SET AUTOCOMMIT = 1")
+    cursor.execute("SET AUTOCOMMIT = 1")
         cursor.execute(sql)
-	self.db.commit()
+    self.db.commit()
         cursor.close()
         self.newAircraft(aircraftid, hexident)
         
@@ -163,7 +176,7 @@ class DataCollector:
         logging.info(sql)
         try:
             cursor.execute(sql)
-	    self.db.commit()
+        self.db.commit()
         except MySQLdb.IntegrityError, e:
             logging.warn(str(e))
         cursor.close()
@@ -175,7 +188,7 @@ class DataCollector:
         sql = "INSERT INTO flightdata (flightid, altitude, latitude, longitude, time, time_ms, transmissiontype) VALUES (%s, %s, %s, %s, '%s', %i, %i)" %(str(flightid), str(altitude), str(latitude), str(longitude), time, time_ms, transmissiontype)
         logging.info(sql)
         cursor.execute(sql)
-	self.db.commit();
+    self.db.commit();
         cursor.close()
     
     def logAirborneVelocityMessage(self, flightid, groundspeed, verticalrate, track):
@@ -185,7 +198,7 @@ class DataCollector:
         logging.info(sql)
         try:
             cursor.execute(sql)
-	    self.db.commit()
+        self.db.commit()
         except MySQLdb.IntegrityError, e:
             logger.warn(str(e))
         cursor.close()
@@ -219,6 +232,7 @@ def main():
                 break
 
 if __name__ == '__main__':
+    setupLogging()
     # do the UNIX double-fork magic, see Stevens' "Advanced
     # Programming in the UNIX Environment" for details (ISBN 0201563177)
     try:
