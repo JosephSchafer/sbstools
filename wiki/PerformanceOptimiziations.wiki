@@ -24,7 +24,7 @@
   if ids[-1] in removeableids:
      removeableids.remove(ids[-1])
 
-  # remove all flightdata
+  # remove all unnecessary flightdata
   DELETE FROM flightdata WHERE id in (<removeableids>)
 
   UPDATE flights SET status=1 WHERE id IN (flights)
