@@ -15,11 +15,11 @@
   SELECT id FROM flightdata WHERE flightid=<ID>
 
   # loop over it and select all ids which can be deleted
-  num = 5
+  skip = 5
   ids = [...]
   removeableids = []
   for id in ids:
-     if id % num != 0:
+     if id % skip != 0:
         removeableids.append(ids[i])
   if ids[-1] in removeableids:
      removeableids.remove(ids[-1])
