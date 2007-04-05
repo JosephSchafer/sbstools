@@ -9,8 +9,12 @@
 
   * reduce flight data by about 90% for flights not crossing Vorarlberg
   {{{
+  # SQL for retrieving all flights that have to be reduced
   SELECT id FROM flights WHERE overVlbg=0 AND status=0
-  
+  # SQL for retrieving all flightdata for flights
+  SELECT id FROM flightdata WHERE flightid=<ID>
+
+  # loop over it and select all ids which can be deleted
   num = 5
   ids = [...]
   removeableids = []
@@ -20,6 +24,8 @@
   if ids[-1] in removeableids:
      removeableids.remove(ids[-1])
 
+  # remove all flightdata
+  DELETE FROM flightdata WHERE id in (<removeableids>)
 
   UPDATE flights SET status=1 WHERE id IN (flights)
   }}}
