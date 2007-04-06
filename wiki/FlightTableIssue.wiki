@@ -7,6 +7,8 @@ The following sql statement presents all flightdata not connected to an existing
 SELECT DISTINCT flightid FROM flightdata WHERE AND '2007-04-07 00:00' AND flightid NOT IN (SELECT id FROM flights);
 }}}
 
-=Solutions=
+=Possible Solutions=
 
-* d
+   * Try to insert missing flights into the flights table and then a script shall set all flightdata belonging together to one single flight.
+
+  * 
