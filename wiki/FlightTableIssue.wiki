@@ -1,3 +1,8 @@
+=Description=
+
+Sometimes aircrafts seem to change their callsign many times during a flight. Unfortunately the Basestation software then introduces a new flightid. As the flightobserver-daemon only inserts new flights on a new aircraft appears on the Basestation screen, there are important flightdata-records not associated with an existing entry in the flights-table. 
+
+The following sql statement presents all flightdata not connected to an existing flight:
 {{{
 SELECT DISTINCT flightid FROM flightdata WHERE AND '2007-04-07 00:00' AND flightid NOT IN (SELECT id FROM flights);
 }}}
