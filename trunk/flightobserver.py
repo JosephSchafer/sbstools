@@ -158,10 +158,12 @@ class DataCollector:
     
     def updateFlightdata(self, flightid, aircraftid, callsign, hexident):
         ''' update flight info after callsign was set '''
-        
-        # __FIXME__: UDPATE cannot be delayed, which is a problem when a transaction is in progress and may messages are skipped
+        # when this method is invoked it does not mean
+        # that the flight with flightid is already in the database!
+        # -> first try insert, then fallback to update
+        # bugfix #2
         cursor = self.db.cursor()
-        sql = "UPDATE flights SET callsign='%s' WHERE ID=%i" %(callsign, flightid)
+        sql = "INSERT INTO flights (id, aircraftid, callsign) VALUES (%i, %i, '%s') ON DUPLICATE KEY UPDATE callsign='%s'" %(flightid, aircraftid, callsign, callsign)
         logging.info(sql)
         cursor.execute("SET AUTOCOMMIT = 1")
         cursor.execute(sql)
