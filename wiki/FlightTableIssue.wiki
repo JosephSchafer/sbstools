@@ -6,3 +6,7 @@ The following sql statement presents all flightdata not connected to an existing
 {{{
 SELECT DISTINCT flightid FROM flightdata WHERE AND '2007-04-07 00:00' AND flightid NOT IN (SELECT id FROM flights);
 }}}
+
+=Solutions=
+
+* d
