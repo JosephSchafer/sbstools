@@ -4,5 +4,6 @@ mysqladmin -u root -p create flightdb
 mysql -u root -p
 GRANT INSERT,UPDATE,SELECT ON flightdb.* TO flight@localhost IDENTIFIED BY 'flyaway';
 
+mysql -u root -p flightdb < flightdb.sql
 
 }}}
