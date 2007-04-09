@@ -7,11 +7,13 @@ The following sql statement presents all flightdata not connected to an existing
 SELECT DISTINCT flightid FROM flightdata WHERE AND '2007-04-07 00:00' AND flightid NOT IN (SELECT id FROM flights);
 }}}
 
-=First Solutionblock=
+==Step 1==
 
    * flightobserver.py creates new entry to table flights when the callsign is set
 
-==Issue==
+==Step 2==
+
+===Issue===
 Example: Flight ELY008 changed its callsign several times and so many new flight entries were created. => summarize these flights into one and update flightdata + airbornevelocity tables!
 
 {{{
