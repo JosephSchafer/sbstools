@@ -32,6 +32,12 @@ till April 15th?
 
   * Reporting: software or existing applications to create useful statistics
 
+  * Lookup flights by callsign: http://www.flightstats.com/go/FlightStatus/flightStatusByFlight.do
+
+  * Lookup aircraft by hexident: http://www.airframes.org
+
+  * Historical ICAO Callsign's: http://www.airlinecodes.co.uk/callsignlistres.asp
+
   * [Reporting]
 
 *Timeframe*
