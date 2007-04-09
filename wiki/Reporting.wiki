@@ -1,5 +1,7 @@
 = SQL =
 
+   * [DatabaseSetup]
+
 {{{
 # sql-statement for finding all flights not yet geographically classified
 SELECT callsign, hexident FROM flights INNER JOIN aircrafts ON flights.aircraftid=aircrafts.id 
