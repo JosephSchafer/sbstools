@@ -22,21 +22,52 @@ class FlightdataFilter:
         
     def runFilter(self, flightid):
         ''' reduce amount of data '''
+        
+        cursor = self.db.cursor()
+        cursor.execute("SET AUTOCOMMIT=0")
         # 1. get ids for data to be removed from table flightdata
         # 2. remove records
         # 1b. get ids for data to be removed from table airbornevelocitymessage
         # 2b. remove records
         # 3. update status of flight record in flights table 
-        flightdataids = self.runFilter(flightid, 'flightdata')
-        airbornevelocityids = self.runFilter(flightid, 'airbornevelocitymessage')
-        # begin transaction
-        "DELETE FROM flightdata WHERE id IN (flightdataids)"
-        "DELETE FROM airbornevelocitymessage WHERE id in (airbornevolocitymessages)"
-        "UPDATE flights SET status=1 WHERE id = %i" %flightid
-        # commit transaction
-    
-    def runFilter(self, flightid, table='flightdata'):
+        flightdataids = self.getRemovableIds(flightid, 'flightdata')
+        airbornevelocityids = self.getRemovableIds(flightid, 'airbornevelocitymessage')
+        # state:
+        # 0: not reduced
+        # 1: reduced 
+        state = 1
         
+        # if there are less than 50 records, do not reduce!
+        if len(flightdataids) < 50 or len(airbornevelocityids) < 50:
+            flightdataids = airbornevelocityids = []
+            state = 0 # not reduced
+        
+        try:
+            # begin transaction
+            # don't care about performance for now: execute individual sql-statements
+            # __FIXME__: DELETE FROM flightdata WHERE id IN (x1, x2, x3, ...xn)
+            for id in flightdataids:
+                sql = "DELETE FROM flightdata WHERE id=%i" %id
+                logging.info(sql)
+                cursor.execute(sql)
+            for id in airbornevelocityids:
+                sql = "DELETE FROM airbornevelocitymessage WHERE id=%i" %id
+                logging.info(sql)
+                cursor.execute(sql)
+            
+            sql = "UPDATE flights SET status=%i WHERE id=%i" %(state, flightid)
+            logging.info(sql)
+            cursor.execute(sql)
+            
+        except:
+            # on error rollback the complete transaction
+            self.db.rollback()
+            
+        # commit transaction
+        self.db.commit()
+        cursor.close()
+    
+    def getRemovableIds(self, flightid, table='flightdata'):
         ids = []
         cursor = self.db.cursor()
         sql = "SELECT id FROM %s WHERE flightid=%i" %(table, flightid)
@@ -48,34 +79,27 @@ class FlightdataFilter:
             ids.append(id)
         
         # loop over all ids and select those to delete
-        step = 10
+        step = 10 # keep ~10% of the data
         removeableids = []
         for id in ids:
             if id % step != 0:
-                removeableids.append(ids[i])
+                removeableids.append(id)
         # ensure that the most recent flightdataentry for the particular flight is not going to be removed
-        if ids[-1] in removeableids:
+        if len(ids) and ids[-1] in removeableids:
             removeableids.remove(ids[-1])
         cursor.close()
         return removeableids
-        
-    def tagFlight(self, flightid, status=0):
-        ''' set flag for flight in db '''
-        
-        cursor = self.db.cursor()
-        sql = "UPDATE flights SET status=%i WHERE id=%i" %(status, flightid)
-        logging.info(sql)
-        cursor.execute(sql)
-        self.db.commit()
-        cursor.close()
     
 def main():
     logging.info("### FILTER started")
     filter = FlightdataFilter()
     
     cursor = filter.db.cursor()
-    # grab all flights, which where marked as _not_ crossing Vorarlberg
-    sql = "SELECT id FROM flights WHERE status IS NULL AND overVlbg=0"
+    # grab all flights, which:
+    # 1. did _not_ cross Vorarlberg
+    # 2. did _not_ have the callsign flickering problem (represented by the subselect)
+    # 3. are not yet classified/reduced (state)
+    sql = "SELECT id FROM flights WHERE state IS NULL AND overVlbg=0 AND id NOT IN (SELECT DISTINCT a.id FROM flights AS a, flights as b WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND timestampdiff(MINUTE, a.ts, b.ts) BETWEEN 0 AND 45)"
     cursor.execute(sql)
     rs = cursor.fetchall()
     
