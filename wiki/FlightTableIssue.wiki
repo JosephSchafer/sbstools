@@ -51,3 +51,14 @@ ORDER BY hexident, flights.ts;
 | 21764 | ELY LY00 | 738044   | 2007-04-08 13:10:21 |
 ...
 }}}
+
+==Search for callsign-flickering flights===
+
+based on the assumption that an aircraft does not appear within 45 minutes with a different callsign. i.e. landing and taking off cannot be that quick.
+
+{{{
+SELECT a.ts, aircrafts.hexident, a.callsign, a.id, b.id, timestampdiff(MINUTE, a.ts, b.ts) AS dif 
+FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id 
+WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND timestampdiff(MINUTE, a.ts, b.ts) BETWEEN 0 AND 45 
+ORDER BY a.ts;          
+}}}
