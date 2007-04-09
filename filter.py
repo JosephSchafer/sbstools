@@ -39,11 +39,12 @@ class FlightdataFilter:
         
         # if there are less than 50 records, do not reduce!
         if len(flightdataids) < 5 or len(airbornevelocityids) < 5:
-            flightdataids = airbornevelocityids = []
-            state = 0 # not reduced
             logging.info("length removable flightdata records: %i" %len(flightdataids))
             logging.info("length removable airbornevelocitymessage records: %i" %len(airbornevelocityids))
             logging.info("not reducing flight# %i" %flightid)
+           
+            flightdataids = airbornevelocityids = []
+            state = 0 # not reduced
         
         try:
             # begin transaction
