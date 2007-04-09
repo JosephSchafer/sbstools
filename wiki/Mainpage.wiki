@@ -19,7 +19,6 @@ fully functional solution till April 1st, 2007 to start recording.
 *Description*
 
   * Software to filter flight data stored in mysql database by geographical aspects. (GPS)
-
   * [GISSoftwareEvaluation]
 
 *Timeframe*
@@ -29,19 +28,15 @@ till April 15th?
 ==Package3==
 
 *Description*
-
   * Reporting: software or existing applications to create useful statistics
 
 *Useful websites*
 
   * Lookup flights by callsign: http://www.flightstats.com/go/FlightStatus/flightStatusByFlight.do
-
   * Lookup aircraft by hexident: http://www.airframes.org
-
   * Historical ICAO Callsign's: http://www.airlinecodes.co.uk/callsignlistres.asp
 
 *Technical*
-
   * [Reporting]
 
 *Timeframe*
