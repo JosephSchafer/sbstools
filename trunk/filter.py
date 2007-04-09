@@ -73,6 +73,8 @@ class FlightdataFilter:
         cursor.close()
     
     def getRemovableIds(self, flightid, table='flightdata'):
+        ''' return ids to be deleted '''
+        
         ids = []
         cursor = self.db.cursor()
         sql = "SELECT id FROM %s WHERE flightid=%i" %(table, flightid)
@@ -82,6 +84,9 @@ class FlightdataFilter:
         for record in rs:
             id = record[0]
             ids.append(id)
+        
+        # __FIXME__: a better way of reducing the dataflood would be to
+        # consider the timestamp of the entries 
         
         # loop over all ids and select those to delete
         step = 10 # keep ~10% of the data
