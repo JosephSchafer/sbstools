@@ -17,7 +17,11 @@ SELECT DISTINCT flightid FROM flightdata WHERE AND '2007-04-07 00:00' AND flight
 Example: Flight ELY008 changed its callsign several times and so many new flight entries were created. => summarize these flights into one and update flightdata + airbornevelocity tables!
 
 {{{
-SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '2007-04-08 00:00' AND '2007-04-09 00:00' ORDER BY hexident, flights.ts;
+SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights 
+LEFT JOIN flightdata ON flights.id=flightdata.flightid 
+LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id 
+WHERE ts BETWEEN '2007-04-08 00:00' AND '2007-04-09 00:00' 
+ORDER BY hexident, flights.ts;
 ...
 | 21705 | ELY008   | 738044   | 2007-04-08 12:56:05 |
 | 21715 | ELY008 N | 738044   | 2007-04-08 12:57:59 |
