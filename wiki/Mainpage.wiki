@@ -1,17 +1,12 @@
-=Overview=
-  * [systemconfiguration]
+=Project packages=
 
-==Details==
-  * Socket output format - http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=1402
-
-==Project packages==
-
-===Package1===
+==Package1==
 
 *Description*
 
   * Setup of hardware (see [systemconfiguration])
   * Software for connecting to Basestation via port and storing all relevant data in a mysql database.
+  * Socket output format - http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=1402
   * [PerformanceOptimiziations]
   * [FlightTableIssue]
 
@@ -19,7 +14,7 @@
 
 fully functional solution till April 1st, 2007 to start recording.
 
-===Package2===
+==Package2==
 
 *Description*
 
@@ -31,7 +26,7 @@ fully functional solution till April 1st, 2007 to start recording.
 
 till April 15th?
 
-===Package3===
+==Package3==
 
 *Description*
 
