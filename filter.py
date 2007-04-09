@@ -38,9 +38,12 @@ class FlightdataFilter:
         state = 1
         
         # if there are less than 50 records, do not reduce!
-        if len(flightdataids) < 50 or len(airbornevelocityids) < 50:
+        if len(flightdataids) < 5 or len(airbornevelocityids) < 5:
             flightdataids = airbornevelocityids = []
             state = 0 # not reduced
+            logging.info("length removable flightdata records: %i" %len(flightdataids))
+            logging.info("length removable airbornevelocitymessage records: %i" %len(airbornevelocityids))
+            logging.info("not reducing flight# %i" %flightid)
         
         try:
             # begin transaction
@@ -55,13 +58,14 @@ class FlightdataFilter:
                 logging.info(sql)
                 cursor.execute(sql)
             
-            sql = "UPDATE flights SET status=%i WHERE id=%i" %(state, flightid)
+            sql = "UPDATE flights SET state=%i WHERE id=%i" %(state, flightid)
             logging.info(sql)
             cursor.execute(sql)
             
         except:
             # on error rollback the complete transaction
             self.db.rollback()
+            logging.error("rollback")
             
         # commit transaction
         self.db.commit()
