@@ -133,7 +133,7 @@ class MessageHandler(threading.Thread):
             time_ms = int(mapping.get('timemessagegenerated').split('.')[1])
             # transmissiontype 2 and 3 contain geographical information (lat, long)
             if transmissiontype in [2, 3]:
-                logging.info('thread: %s in action, %i entires in the queue' %(self.getName(), queue.qsize()))
+                logging.info('thread: %s in action, %i item(s) in the queue' %(self.getName(), queue.qsize()))
                 logging.debug('lat: %f' %mapping.get('lat'))
                 logging.debug('long: %f' %mapping.get('long'))
                 self.collector.logFlightdata(mapping.get('flightid'), mapping.get('altitude'), mapping.get('lat'), mapping.get('long'), mapping.get('datemessagegenerated') + ' ' + mapping.get('timemessagegenerated'), time_ms, transmissiontype)
