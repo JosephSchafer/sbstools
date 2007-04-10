@@ -224,8 +224,8 @@ def main():
     # Win running in VMWare Server takes some time to boot itself 
     # 2007-04-04 bugfix: don't crash when connection to telnet is lost (e.g. Win auto-updates)
     
-    while 1:
-        while 1:
+    while True:
+        while True:
             try:
                 tn = telnetlib.Telnet(HOST, PORT)
             except socket.error, e:
@@ -241,7 +241,7 @@ def main():
             handler.setName('thread #%i' %x)
             handler.start()
        
-        while 1:
+        while True:
             try:
                 message = tn.read_until('\n')
                 message = message.replace("\r\n", "")
@@ -272,5 +272,8 @@ if __name__ == '__main__':
     # start the daemon main loop
     try:
         main()
+        #thread = threading.Thread(target=main)
+        #thread.setDaemon(1)
+        #thread.start()
     except Exception, e:
         logging.error("application terminated :( %s" %str(e))
