@@ -32,7 +32,7 @@ class FlightAnalyzer:
         ''' fix callsign flickering troubles '''
         
         cursor = self.db.cursor()
-        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NOT NULL AND a.overVlbg IS NOT NULL AND timestampdiff(MINUTE, a.ts, b.ts) BETWEEN 0 AND 45 AND hexident LIKE '887800' ORDER BY a.ts"
+        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NOT NULL AND a.overVlbg IS NOT NULL AND timestampdiff(MINUTE, a.ts, b.ts) BETWEEN 0 AND 45 ORDER BY a.ts"
         cursor.execute(sql)
         rs = cursor.fetchall()
         
