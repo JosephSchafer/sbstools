@@ -47,7 +47,9 @@ class FlightAnalyzer:
             pairs.append((flightid, callsign))
             hextable[hexident] = pairs
         logging.info(hextable)
+        cursor.close()
         
+        cursor = self.db.cursor()
         for key in hextable.keys():
             pairs = hextable.get(key)
             callsigns = [cs for flightid, cs in pairs]
@@ -65,6 +67,27 @@ class FlightAnalyzer:
             logging.info("main flightid: %s" %mainflightid)
             logging.info("merged flightids: %s" %mergedflightids)
             
+            # start transaction
+            cursor.execute("SET AUTOCOMMIT=0")
+            try:
+                sql = "UPDATE flights SET callsign='%s' WHERE id=%i" %(callsign, mainflightid)
+                logging.info(sql)
+                cursor.execute(sql)
+                for flightid in mergedflightids:
+                    sql = "UPDATE flightdata SET flightid=%i WHERE flightid=%i" %(mainflightid, flightid)
+                    logging.info(sql)
+                    cursor.execute(sql)
+                    sql = "UPDATE airbornevelocitymessage SET flightid=%i WHERE flightid=%i" %(mainflightid, flightid)
+                    logging.info(sql)
+                    cursor.execute(sql)
+                    sql = "DELETE FROM flights WHERE id=%i" %flightid
+                    logging.info(sql)
+                    cursor.execute(sql)
+            except:
+                self.db.rollback()
+            self.db.commit()
+        cursor.close()
+        
     def processFlight(self, flightid):
         ''' 1. check flight + 2. tag flight'''
         isIntersecting = self.checkFlight(flightid)
