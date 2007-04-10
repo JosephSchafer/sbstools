@@ -55,6 +55,8 @@ class FlightAnalyzer:
             callsigns = [cs for flightid, cs in pairs]
             logging.info(callsigns)
             freq = [(a, callsigns.count(a)) for a in set(callsigns)]
+            # sort callsign so that None is last
+            freq.sort(lambda a, b: cmp(b[0], a[0]))
             freq.sort(lambda a, b: cmp(b[1], a[1]))
             logging.info(freq)
             callsign = freq[0][0]
@@ -73,17 +75,17 @@ class FlightAnalyzer:
             try:
                 sql = "UPDATE flights SET callsign='%s' WHERE id=%i" %(callsign, mainflightid)
                 logging.info(sql)
-                cursor.execute(sql)
+                #cursor.execute(sql)
                 for flightid in mergedflightids:
                     sql = "UPDATE flightdata SET flightid=%i WHERE flightid=%i" %(mainflightid, flightid)
                     logging.info(sql)
-                    cursor.execute(sql)
+                    #cursor.execute(sql)
                     sql = "UPDATE airbornevelocitymessage SET flightid=%i WHERE flightid=%i" %(mainflightid, flightid)
                     logging.info(sql)
-                    cursor.execute(sql)
+                    #cursor.execute(sql)
                     sql = "DELETE FROM flights WHERE id=%i" %flightid
                     logging.info(sql)
-                    cursor.execute(sql)
+                    #cursor.execute(sql)
             except:
                 self.db.rollback()
             self.db.commit()
