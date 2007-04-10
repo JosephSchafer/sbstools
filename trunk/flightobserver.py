@@ -14,13 +14,16 @@ import logging
 from logging import handlers
 import MySQLdb
 import time
+import threading
+import Queue
 
 HOST = "192.168.2.110" # ip-address Basestation is running at
 PORT = 30003 # port 30003 is Basestation's default
 
 LOGFILE = '/var/log/flightobserver.log'
 PIDFILE = '/var/run/pyflightobserver.pid'
-
+queue = Queue.Queue()
+   
 def setupLogging():
     ''' set up the Python logging facility '''
     
@@ -36,12 +39,19 @@ def setupLogging():
     logger.setLevel(logging.INFO)
     logging.getLogger('').addHandler(handler)
 
-class MessageHandler:
+class MessageHandler(threading.Thread):
     ''' process messages '''
    
     def __init__(self):
+        threading.Thread.__init__(self)
         self.collector = DataCollector()
  
+    def run(self):
+        ''' thread runner '''
+        while True:
+            msg = queue.get()
+            self.processMessage(msg)
+        
     def _createMap(self, msgparts, fields):
         ''' map msg parts to fields '''
         mapping = dict(zip(fields, msgparts))
@@ -123,6 +133,7 @@ class MessageHandler:
             time_ms = int(mapping.get('timemessagegenerated').split('.')[1])
             # transmissiontype 2 and 3 contain geographical information (lat, long)
             if transmissiontype in [2, 3]:
+                logging.warn('thread: %s in action' %self.getName())
                 logging.debug('lat: %f' %mapping.get('lat'))
                 logging.debug('long: %f' %mapping.get('long'))
                 self.collector.logFlightdata(mapping.get('flightid'), mapping.get('altitude'), mapping.get('lat'), mapping.get('long'), mapping.get('datemessagegenerated') + ' ' + mapping.get('timemessagegenerated'), time_ms, transmissiontype)
@@ -212,6 +223,7 @@ def main():
     # try several times to connect to host
     # Win running in VMWare Server takes some time to boot itself 
     # 2007-04-04 bugfix: don't crash when connection to telnet is lost (e.g. Win auto-updates)
+    
     while 1:
         while 1:
             try:
@@ -223,12 +235,17 @@ def main():
             else:
                 break
         
-        handler = MessageHandler()
+        # Start some threads:
+        for x in range(4):
+            handler = MessageHandler()
+            handler.setName('thread #%i' %x)
+            handler.start()
+       
         while 1:
             try:
                 message = tn.read_until('\n')
                 message = message.replace("\r\n", "")
-                handler.processMessage(message)
+                queue.put(message)
             except EOFError, e:
                 logging.warn("lost telnet connection %s" %str(e))
                 break
