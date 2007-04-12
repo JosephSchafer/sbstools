@@ -4,7 +4,7 @@ Sometimes aircrafts seem to change their callsign many times during a flight. Un
 
 The following sql statement presents all flightdata not connected to an existing flight:
 {{{
-SELECT DISTINCT flightid FROM flightdata WHERE AND '2007-04-07 00:00' AND flightid NOT IN (SELECT id FROM flights);
+SELECT DISTINCT flightid FROM flightdata WHERE flightid NOT IN (SELECT id FROM flights);
 }}}
 
 ==Step 1==
