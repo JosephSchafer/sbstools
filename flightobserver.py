@@ -145,8 +145,6 @@ class MessageHandler(threading.Thread):
         else:
             # unknown msgtype!
             pass
-    # listen on socket until user terminates process
-
 
 class DataCollector:
     ''' database agent '''
@@ -218,9 +216,10 @@ class DataCollector:
         
 def main():
 
-    wait = 20
+    TIMEOUT = 10
+    MAXTHREADS = 3
     logging.info("starting daemon")
-    # try several times to connect to host
+    # try several times to reconnect to host
     # Win running in VMWare Server takes some time to boot itself 
     # 2007-04-04 bugfix: don't crash when connection to telnet is lost (e.g. Win auto-updates)
     
@@ -230,24 +229,37 @@ def main():
                 tn = telnetlib.Telnet(HOST, PORT)
             except socket.error, e:
                 logging.warn("cannot open telnet connection %s" %str(e))
-                logging.info("sleeping for %i seconds" % wait)
-                time.sleep(wait)
+                logging.info("sleeping for %i seconds" % TIMEOUT)
+                time.sleep(TIMEOUT)
             else:
                 break
         
-        # Start some threads:
-        for x in range(4):
+        # currently running threads: mainthread + handlerthreads
+        threadcount = threading.activeCount()
+        logging.info("number of running threads: %i" %threadcount)
+        
+        # Start handler threads till MAXTHRADS is reached:
+        for x in range(threadcount, MAXTHREADS + 1):
             handler = MessageHandler()
             handler.setName('thread #%i' %x)
             handler.start()
        
+       # start reading from port of Basestation
+       # and putting messages in a queue
         while True:
             try:
-                message = tn.read_until('\n')
+                message = tn.read_until('\n', TIMEOUT)
                 message = message.replace("\r\n", "")
+                # when network connection is down, no exception is thrown but
+                # an empty string is returned
+                if len(message) == 0:
+                    raise Exception("empty string read from port")
                 queue.put(message)
             except EOFError, e:
                 logging.warn("lost telnet connection %s" %str(e))
+                break
+            except Exception, e:
+                logging.warn("Exception thrown: %s" %str(e))
                 break
 
 if __name__ == '__main__':
@@ -272,8 +284,5 @@ if __name__ == '__main__':
     # start the daemon main loop
     try:
         main()
-        #thread = threading.Thread(target=main)
-        #thread.setDaemon(1)
-        #thread.start()
     except Exception, e:
         logging.error("application terminated :( %s" %str(e))
