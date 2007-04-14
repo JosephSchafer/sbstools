@@ -2,7 +2,7 @@
 --
 -- Host: localhost    Database: flightdb
 -- ------------------------------------------------------
--- Server version	5.0.22-Debian_0ubuntu6.06.3-log
+-- Server version	5.0.24a-Debian_9ubuntu2-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -26,6 +26,7 @@ CREATE TABLE `airbornevelocitymessage` (
   `groundspeed` smallint(5) unsigned default NULL,
   `verticalrate` smallint(6) default NULL,
   `track` smallint(5) unsigned default NULL,
+  `time` datetime default NULL,
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
