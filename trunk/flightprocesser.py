@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Applying geo-operations to flights
+# Applying operations to flights: merge flights, geo-processing
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
 import ogr
 import time
@@ -13,7 +13,7 @@ SHAPEFILE = 'data/vlbg_wgs84_douglas_14.shp'
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
 class FlightAnalyzer:
-    ''' geographical analyzer of flights '''
+    ''' analyzer of flights '''
     
     host = 'localhost'
     database = 'flightdb'
@@ -32,19 +32,23 @@ class FlightAnalyzer:
         ''' fix callsign flickering troubles '''
         
         cursor = self.db.cursor()
-        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NOT NULL AND a.overVlbg IS NOT NULL AND timestampdiff(MINUTE, a.ts, b.ts) BETWEEN 0 AND 45 ORDER BY a.ts"
+        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NOT NULL AND a.overVlbg IS NOT NULL AND timestampdiff(MINUTE, a.ts, b.ts) BETWEEN 0 AND 45 AND aircrafts.hexident IS NOT NULL ORDER BY a.ts"
         cursor.execute(sql)
         rs = cursor.fetchall()
         
         # collect flights which belong togeter
         # format: HEXIDENT2: [CALLSIGN1, CALLSIGN2, ...], HEXIDENT2
+        # flights belong together when:
+        # - they have the same aircraft
+        # - flight timestamps differ 45' max
         hextable = {}
         for record in rs:
+            ts = record[0]
             hexident = record[1]
             callsign = record[2]
             flightid = record[3]
             pairs = hextable.get(hexident, [])
-            pairs.append((flightid, callsign))
+            pairs.append((flightid, callsign, ts))
             hextable[hexident] = pairs
         logging.info(hextable)
         cursor.close()
@@ -52,17 +56,18 @@ class FlightAnalyzer:
         cursor = self.db.cursor()
         for key in hextable.keys():
             pairs = hextable.get(key)
-            callsigns = [cs for flightid, cs in pairs]
+            callsigns = [cs for flightid, cs, ts in pairs]
             logging.info(callsigns)
             freq = [(a, callsigns.count(a)) for a in set(callsigns)]
             # sort callsign so that None is last
             freq.sort(lambda a, b: cmp(b[0], a[0]))
             freq.sort(lambda a, b: cmp(b[1], a[1]))
             logging.info(freq)
+            # __FIXME__: give priority to callsigns where isalnum() is True
             callsign = freq[0][0]
             logging.info("callsign: %s" %callsign)
             
-            mergedflightids = [flightid for flightid, cs in pairs]
+            mergedflightids = [flightid for flightid, cs, ts in pairs]
             mainflightid = mergedflightids[0]
             mergedflightids.remove(mainflightid)
             
@@ -74,17 +79,17 @@ class FlightAnalyzer:
             cursor.execute("SET AUTOCOMMIT=0")
             try:
                 sql = "UPDATE flights SET callsign='%s' WHERE id=%i" %(callsign, mainflightid)
-                logging.info(sql)
+                #logging.info(sql)
                 #cursor.execute(sql)
                 for flightid in mergedflightids:
                     sql = "UPDATE flightdata SET flightid=%i WHERE flightid=%i" %(mainflightid, flightid)
-                    logging.info(sql)
+                    #logging.info(sql)
                     #cursor.execute(sql)
                     sql = "UPDATE airbornevelocitymessage SET flightid=%i WHERE flightid=%i" %(mainflightid, flightid)
-                    logging.info(sql)
+                    #logging.info(sql)
                     #cursor.execute(sql)
                     sql = "DELETE FROM flights WHERE id=%i" %flightid
-                    logging.info(sql)
+                    #logging.info(sql)
                     #cursor.execute(sql)
             except:
                 self.db.rollback()
