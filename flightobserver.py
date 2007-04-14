@@ -141,7 +141,7 @@ class MessageHandler(threading.Thread):
                 logging.debug('callsign: %s' %mapping.get('callsign'))
             elif transmissiontype == 4:
                 logging.debug('track: %s' %mapping.get('track'))
-                self.collector.logAirborneVelocityMessage(mapping.get('flightid'), mapping.get('groundspeed'), mapping.get('verticalrate'), mapping.get('track'))
+                self.collector.logAirborneVelocityMessage(mapping.get('flightid'), mapping.get('groundspeed'), mapping.get('verticalrate'), mapping.get('track'), mapping.get('datemessagegenerated') + ' ' + mapping.get('timemessagegenerated'))
         else:
             # unknown msgtype!
             pass
@@ -202,10 +202,10 @@ class DataCollector:
         self.db.commit();
         cursor.close()
     
-    def logAirborneVelocityMessage(self, flightid, groundspeed, verticalrate, track):
+    def logAirborneVelocityMessage(self, flightid, groundspeed, verticalrate, track, time):
         ''' store transmission type 4 '''
         cursor = self.db.cursor()
-        sql = "INSERT INTO airbornevelocitymessage (flightid, groundspeed, verticalrate, track) VALUES (%s, %s, %s, %s)" %(flightid, groundspeed, verticalrate, track)
+        sql = "INSERT INTO airbornevelocitymessage (flightid, groundspeed, verticalrate, track, time) VALUES (%s, %s, %s, %s, '%s')" %(flightid, groundspeed, verticalrate, track, time)
         logging.info(sql)
         try:
             cursor.execute(sql)
@@ -244,7 +244,7 @@ def main():
             handler.setName('thread #%i' %x)
             handler.start()
        
-       # start reading from port of Basestation
+       # start reading from Basestation's port
        # and putting messages in a queue
         while True:
             try:
