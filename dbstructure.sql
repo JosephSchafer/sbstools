@@ -27,7 +27,9 @@ CREATE TABLE `airbornevelocitymessage` (
   `verticalrate` smallint(6) default NULL,
   `track` smallint(5) unsigned default NULL,
   `time` datetime default NULL,
-  PRIMARY KEY  (`id`)
+  PRIMARY KEY  (`id`),
+  KEY `flightid` (`flightid`),
+  KEY `flightid_2` (`flightid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
