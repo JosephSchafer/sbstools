@@ -205,9 +205,7 @@ class DataCollector:
     def logAirborneVelocityMessage(self, flightid, groundspeed, verticalrate, track, time):
         ''' store transmission type 4 '''
         cursor = self.db.cursor()
-        # temporary leaving out time info to prevent
-        # sql = "INSERT INTO airbornevelocitymessage (flightid, groundspeed, verticalrate, track, time) VALUES (%s, %s, %s, %s, '%s')" %(flightid, groundspeed, verticalrate, track, time)
-        sql = "INSERT INTO airbornevelocitymessage (flightid, groundspeed, verticalrate, track) VALUES (%s, %s, %s, %s)" %(flightid, groundspeed, verticalrate, track)
+        sql = "INSERT INTO airbornevelocitymessage (flightid, groundspeed, verticalrate, track, time) VALUES (%s, %s, %s, %s, '%s')" %(flightid, groundspeed, verticalrate, track, time)
         logging.info(sql)
         try:
             cursor.execute(sql)
