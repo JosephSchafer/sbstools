@@ -44,6 +44,9 @@ class FlightAnalyzer:
         # flights belong together when:
         # - they have the same aircraft
         # - flight timestamps differ 30' max
+        # __FIXME__: gotta check the time difference between adjacent records:
+        # dt = datetime.datetime(*time.strptime('2007-03-16 18:50:24', "%Y-%m-%d %H:%M:%S")[0:6]) 
+        # dt2 - dt1: http://docs.python.org/lib/datetime-timedelta.html
         hextable = {}
         for record in rs:
             ts = record[0]
