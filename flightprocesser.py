@@ -2,7 +2,6 @@
 # Applying operations to flights: 
 # - merge flights (keyword "callsign flickering")
 # - geo-analysis
-# intended usage: run periodically
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
 import ogr
 import time, datetime
@@ -19,9 +18,9 @@ class FlightMerger:
     ''' object holding info about how to merge table '''
     
     def __init__(self):
-        self.hexidents = {} # {'AE3463' : [23234, 34223, 34234]}
-        self.flightmappings = {} # {3234: [(342342, 'SWR343'), (234234, 'SWR5')]}
-        self.flighttimestamps = {} # {3234: '2007-04-23 23:23'}
+        self.hexidents = {} # {'AE3463' : [23234, 34223, 34234]} hexident-to-flightid mapping
+        self.flightmappings = {} # {3234: [(342342, 'SWR343'), (234234, 'SWR5')]} mainflightid-to-mergedflightid mapping
+        self.flighttimestamps = {} # {3234: '2007-04-23 23:23'} flightid-to-timestamp mapping
     
     def determineCallsign(self, flightid):
         ''' choose the callsign which occurs most often '''
@@ -109,6 +108,25 @@ class FlightAnalyzer:
         self.feature = self.layer.GetNextFeature()
         self.geometry = self.feature.GetGeometryRef()
     
+    def geoclassifyFlights(self):
+        ''' check if flight crossed a certain region '''
+        
+        cursor = self.db.cursor()
+        # grab all flights not yet classified geographically
+        # and not currently in progress
+        # NOTE: new flights appear in realtime, other messages are 5 minutes delayed
+        # -> 1. only check flights which were added more than 6 minutes ago
+        # -> 2. only check flights where the most recent flightdata is older than 6 minutes
+        # -> 3. only check flights which have already been merged, i.e. where mergestate NOT NULL
+        sql = "SELECT id FROM flights WHERE overVlbg IS NULL AND ts < NOW()-INTERVAL 6 MINUTE AND id NOT IN (SELECT DISTINCT flightid FROM flightdata WHERE time  > NOW()-INTERVAL 6 MINUTE) AND flights.aircraftid NOT in (SELECT DISTINCT aircraftid FROM flights INNER JOIN flightdata ON flights.id = flightdata.flightid AND ts > NOW()-INTERVAL 6 MINUTE)"
+        cursor.execute(sql)
+        rs = cursor.fetchall()
+        # loop over all flights and check'em 
+        for record in rs:
+            flightid = record[0]
+            self.geoclassifyFlight(flightid)
+        cursor.close() 
+    
     def mergeFlights(self):
         ''' fix callsign flickering troubles '''
         # see forum posting: http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=3782
@@ -140,8 +158,10 @@ class FlightAnalyzer:
             try:
                 sql = "UPDATE flights SET callsign='%s', mergestate=1 WHERE id=%i" %(callsign, flightid)
                 logging.debug(sql)
+                logging.info("set flight %i to callsign %s" %(flightid, callsign))
                 #cursor.execute(sql)
                 for id in mergingids:
+                    logging.info("merging flight %i with mainflight %i" %(id, flightid))
                     sql = "UPDATE flightdata SET flightid=%i WHERE flightid=%i" %(flightid, id)
                     logging.debug(sql)
                     #cursor.execute(sql)
@@ -151,13 +171,14 @@ class FlightAnalyzer:
                     sql = "DELETE FROM flights WHERE id=%i" %id
                     logging.debug(sql)
                     #cursor.execute(sql)
-            except:
+            except Exception, e:
+                logging.warn(str(e))
                 self.db.rollback()
             self.db.commit()
         cursor.close()
     
-    def processFlight(self, flightid):
-        ''' 1. check flight + 2. tag flight'''
+    def geoclassifyFlight(self, flightid):
+        ''' check&tag flight '''
         isIntersecting = self.checkFlight(flightid)
         self.tagFlight(flightid, isIntersecting)
     
@@ -206,27 +227,18 @@ class FlightAnalyzer:
         cursor.close()
     
 def main():
-    logging.info("### GEOFILTER started")
+    ''' flightprocessor main '''
+    
+    logging.info("### FLIGHTPROCESSOR started")
+    
     analyzer = FlightAnalyzer()
     cursor = analyzer.db.cursor()
-    # grab all flights not yet classified geographically
-    # and not currently in progress
-    # NOTE: new flights appear in realtime, other messages are 5 minutes delayed
-    # -> 1. only check flights which were added more than 6 minutes ago
-    # -> 2. only check flights where the most recent flightdata is older than 6 minutes
-    # -> 3. only check flights where all identical flights with different ids (callsign flickering) are older than 6 minutes
+    # merge flights: "callsign flickering" problem
     analyzer.mergeFlights()
-    sql = "SELECT id FROM flights WHERE overVlbg IS NULL AND ts < NOW()-INTERVAL 6 MINUTE AND id NOT IN (SELECT DISTINCT flightid FROM flightdata WHERE time  > NOW()-INTERVAL 6 MINUTE) AND flights.aircraftid NOT in (SELECT DISTINCT aircraftid FROM flights INNER JOIN flightdata ON flights.id = flightdata.flightid AND ts > NOW()-INTERVAL 6 MINUTE)"
-    cursor.execute(sql)
-    rs = cursor.fetchall()
- 
-    # loop over all flights and check'em 
-   # for record in rs:
-    #    flightid = record[0]
-     #   analyzer.processFlight(flightid)
-
-    cursor.close() 
-    logging.info("### GEOFILTER finished")
+    # check if flights crossed Vorarlberg
+    # analyzer.geoclassifyFlights()
+    
+    logging.info("### FLIGHTPROCESSOR finished")
  
 if __name__ == '__main__':
     main()
