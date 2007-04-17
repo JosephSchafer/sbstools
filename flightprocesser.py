@@ -34,25 +34,40 @@ class FlightAnalyzer:
     def mergeFlights(self):
         ''' fix callsign flickering troubles '''
         # see forum posting: http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=3782
+        
+        # mergestate:
+        # NULL ... undefined
+        # 0 ... not merged
+        # 1 ... merged
         cursor = self.db.cursor()
-        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id, b.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NOT NULL AND a.overVlbg IS NOT NULL AND timestampdiff(MINUTE, a.ts, b.ts) BETWEEN 0 AND 30 AND aircrafts.hexident IS NOT NULL ORDER BY a.ts"
+        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id, b.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NOT NULL AND a.overVlbg IS NOT NULL AND timestampdiff(MINUTE, a.ts, b.ts) BETWEEN 0 AND 30 AND a.ts <= NOW() - INTERVAL 30 MINUTE AND aircrafts.hexident IS NOT NULL ORDER BY a.ts"
         cursor.execute(sql)
         rs = cursor.fetchall()
         
         # collect flights which belong togeter
-        # format: HEXIDENT2: [CALLSIGN1, CALLSIGN2, ...], HEXIDENT2
+        # format: FLIGHTID: [FLIGHTID2, FLIGHTID3, ...], FLIGHTID
         # flights belong together when:
         # - they have the same aircraft
         # - flight timestamps differ 30' max
         # __FIXME__: gotta check the time difference between adjacent records:
         # dt = datetime.datetime(*time.strptime('2007-03-16 18:50:24', "%Y-%m-%d %H:%M:%S")[0:6]) 
         # dt2 - dt1: http://docs.python.org/lib/datetime-timedelta.html
+        flightsdict = {} # {1784: [2343, 2342, 4234], 1834: [432, 4342, 342] ...} 
+        callsigndict = {} # {1784: ['ELY208', 'ELY 2', ...}
+        ts_previous = None
+        
         hextable = {}
         for record in rs:
             ts = record[0]
             hexident = record[1]
             callsign = record[2]
             flightid = record[3]
+            
+            # if no previous record exists
+            # set previous ts to current ts
+            if ts_previous == None:
+                ts_previous = ts
+            
             pairs = hextable.get(hexident, [])
             pairs.append((flightid, callsign, ts))
             hextable[hexident] = pairs
