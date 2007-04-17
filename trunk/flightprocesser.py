@@ -5,7 +5,7 @@
 # intended usage: run periodically
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
 import ogr
-import time
+import time, datetime
 import MySQLdb
 import logging
 
@@ -13,7 +13,85 @@ import logging
 # the simpliefied map is made public 
 SHAPEFILE = 'data/vlbg_wgs84_douglas_14.shp'
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+
+class FlightMerger:
+    ''' object holding info about how to merge table '''
+    
+    def __init__(self):
+        self.hexidents = {} # {'AE3463' : [23234, 34223, 34234]}
+        self.flightmappings = {} # {3234: [(342342, 'SWR343'), (234234, 'SWR5')]}
+        self.flighttimestamps = {} # {3234: '2007-04-23 23:23'}
+    
+    def determineCallsign(self, flightid):
+        ''' choose the callsign which occurs most often '''
+        
+        mappings = self.flightmappings.get(flightid, None)
+        if mappings == None:
+            return None
+        callsigns = [callsign for flightid, callsign in mappings]
+        freq = [(a, callsigns.count(a)) for a in set(callsigns)]
+        
+        # sort callsign so that None is last
+        freq.sort(lambda a, b: cmp(b[0], a[0]))
+        freq.sort(lambda a, b: cmp(b[1], a[1]))
+        logging.info(freq)
+        callsign = freq[0][0]
+        logging.info("callsign: %s" %callsign)
+        return callsign
+
+    def getMergeInfo(self):
+        ''' list of merging data '''
+        
+        mergeinfo = []
+        for flightid, connectedflightids in self.flightmappings.items():
+            callsign = self.determineCallsign(flightid)
+            # remove 1st entry as it is flightid itself 
+            del connectedflightids[0]
+            mergeinfo.append( (flightid, callsign, [id for id, callsign in connectedflightids]) )
+        return mergeinfo
+    
+    def addFlight(self, flightid, callsign, hexident, timestamp):
+        ''' adding flight to table '''
+        
+        ts = time.mktime( timestamp.timetuple() )
+        
+        # do we already have the aircraft with hexident in our hexidents-table?
+        if self.hexidents.has_key(hexident):
+            ids = self.hexidents.get(hexident)
+            
+            found = 0
+            for id in ids[:]:
+                # calculate time difference in seconds between these two flights
+                ts_id = self.flighttimestamps.get(id)
+                timediff = abs(ts_id - ts)
+                
+                # HIT! flights shall be merged!
+                if (timediff / 60) <= 30:
+                    found = 1
+                    mappings = self.flightmappings.get( id )
+                    if (flightid, callsign) not in mappings:
+                        mappings.append( (flightid, callsign) )
+                        self.flightmappings[id] = mappings
+                    break
+                
+            # this is a NEW flight!
+            if found == 0:
+                ids.append( flightid )
+                self.hexidents[hexident] = ids
+                self.flightmappings[flightid] = [ (flightid, callsign) ]
+                self.flighttimestamps[flightid] = ts
+                
+        # totally new flight
+        else:
+            self.hexidents[hexident] = [flightid, ]
+            self.flightmappings[flightid] = [ (flightid, callsign) ]
+            self.flighttimestamps[flightid] = ts
+        
+    def getFlighttable(self):
+        ''' returning ready table '''
+        
+        return self.hexidents#self.flightmappings #, self.flighttimestamps)
 
 class FlightAnalyzer:
     ''' analyzer of flights '''
@@ -40,83 +118,44 @@ class FlightAnalyzer:
         # 0 ... not merged
         # 1 ... merged
         cursor = self.db.cursor()
-        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id, b.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NOT NULL AND a.overVlbg IS NOT NULL AND timestampdiff(MINUTE, a.ts, b.ts) BETWEEN 0 AND 30 AND a.ts <= NOW() - INTERVAL 30 MINUTE AND aircrafts.hexident IS NOT NULL ORDER BY a.ts"
+        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id, b.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NOT NULL AND a.overVlbg IS NOT NULL AND ABS(timestampdiff(MINUTE, a.ts, b.ts)) BETWEEN 0 AND 30 AND a.ts <= NOW() - INTERVAL 30 MINUTE AND aircrafts.hexident IS NOT NULL AND a.ts >= '2007-04-01 00:00' AND b.ts >= '2007-04-01 00:00' ORDER BY a.ts"
         cursor.execute(sql)
         rs = cursor.fetchall()
         
-        # collect flights which belong togeter
-        # format: FLIGHTID: [FLIGHTID2, FLIGHTID3, ...], FLIGHTID
-        # flights belong together when:
-        # - they have the same aircraft
-        # - flight timestamps differ 30' max
-        # __FIXME__: gotta check the time difference between adjacent records:
-        # dt = datetime.datetime(*time.strptime('2007-03-16 18:50:24', "%Y-%m-%d %H:%M:%S")[0:6]) 
-        # dt2 - dt1: http://docs.python.org/lib/datetime-timedelta.html
-        flightsdict = {} # {1784: [2343, 2342, 4234], 1834: [432, 4342, 342] ...} 
-        callsigndict = {} # {1784: ['ELY208', 'ELY 2', ...}
-        ts_previous = None
-        
-        hextable = {}
+        tbl = FlightMerger()
         for record in rs:
-            ts = record[0]
-            hexident = record[1]
-            callsign = record[2]
-            flightid = record[3]
+            ts, hexident, callsign, flightid, flightid2 = record
+            tbl.addFlight(flightid, callsign, hexident, ts)
             
-            # if no previous record exists
-            # set previous ts to current ts
-            if ts_previous == None:
-                ts_previous = ts
-            
-            pairs = hextable.get(hexident, [])
-            pairs.append((flightid, callsign, ts))
-            hextable[hexident] = pairs
-        logging.info(hextable)
+        logging.info( tbl.getFlighttable() )
         cursor.close()
         
+        mergeinfo = tbl.getMergeInfo()
         cursor = self.db.cursor()
-        for key in hextable.keys():
-            pairs = hextable.get(key)
-            callsigns = [cs for flightid, cs, ts in pairs]
-            logging.info(callsigns)
-            freq = [(a, callsigns.count(a)) for a in set(callsigns)]
-            # sort callsign so that None is last
-            freq.sort(lambda a, b: cmp(b[0], a[0]))
-            freq.sort(lambda a, b: cmp(b[1], a[1]))
-            logging.info(freq)
-            # __FIXME__: give priority to callsigns where isalnum() is True
-            callsign = freq[0][0]
-            logging.info("callsign: %s" %callsign)
-            
-            mergedflightids = [flightid for flightid, cs, ts in pairs]
-            mainflightid = mergedflightids[0]
-            mergedflightids.remove(mainflightid)
-            
-            logging.info("main flightid: %s" %mainflightid)
-            logging.info("merged flightids: %s" %mergedflightids)
+        cursor.execute("SET AUTOCOMMIT=0")
+        for flightid, callsign, mergingids in mergeinfo:
             
             # start transaction
             # __FIXME__: improve performance by issuing combined sql-statements: UPDATE flightdata SET flightid=.. WHERE flightid=x OR flightid=y ...
-            cursor.execute("SET AUTOCOMMIT=0")
             try:
-                sql = "UPDATE flights SET callsign='%s' WHERE id=%i" %(callsign, mainflightid)
-                #logging.info(sql)
+                sql = "UPDATE flights SET callsign='%s', mergestate=1 WHERE id=%i" %(callsign, flightid)
+                logging.debug(sql)
                 #cursor.execute(sql)
-                for flightid in mergedflightids:
-                    sql = "UPDATE flightdata SET flightid=%i WHERE flightid=%i" %(mainflightid, flightid)
-                    #logging.info(sql)
+                for id in mergingids:
+                    sql = "UPDATE flightdata SET flightid=%i WHERE flightid=%i" %(flightid, id)
+                    logging.debug(sql)
                     #cursor.execute(sql)
-                    sql = "UPDATE airbornevelocitymessage SET flightid=%i WHERE flightid=%i" %(mainflightid, flightid)
-                    #logging.info(sql)
+                    sql = "UPDATE airbornevelocitymessage SET flightid=%i WHERE flightid=%i" %(flightid, id)
+                    logging.debug(sql)
                     #cursor.execute(sql)
-                    sql = "DELETE FROM flights WHERE id=%i" %flightid
-                    #logging.info(sql)
+                    sql = "DELETE FROM flights WHERE id=%i" %id
+                    logging.debug(sql)
                     #cursor.execute(sql)
             except:
                 self.db.rollback()
             self.db.commit()
         cursor.close()
-        
+    
     def processFlight(self, flightid):
         ''' 1. check flight + 2. tag flight'''
         isIntersecting = self.checkFlight(flightid)
