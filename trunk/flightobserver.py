@@ -216,7 +216,7 @@ class DataCollector:
         
 def main():
 
-    TIMEOUT = 10
+    TIMEOUT = 60
     MAXTHREADS = 3
     logging.info("starting daemon")
     # try several times to reconnect to host
@@ -252,9 +252,12 @@ def main():
                 message = message.replace("\r\n", "")
                 # when network connection is down, no exception is thrown but
                 # an empty string is returned
-                if len(message) == 0:
-                    raise Exception("empty string read from port")
-                queue.put(message)
+                if len(message):
+                    queue.put(message)
+                else:
+                    pass
+                    #raise Exception("empty string read from port")
+                
             except EOFError, e:
                 logging.warn("lost telnet connection %s" %str(e))
                 break
