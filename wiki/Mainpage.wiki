@@ -43,3 +43,7 @@ till April 15th?
 *Timeframe*
 
 May 2007?
+
+==Future==
+
+  * Usage of an object relational mapper: http://www.sqlalchemy.org/
