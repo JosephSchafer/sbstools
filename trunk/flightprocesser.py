@@ -1,5 +1,8 @@
 #!/usr/bin/python
-# Applying operations to flights: merge flights, geo-processing
+# Applying operations to flights: 
+# - merge flights (keyword "callsign flickering")
+# - geo-analysis
+# intended usage: run periodically
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
 import ogr
 import time
@@ -30,9 +33,9 @@ class FlightAnalyzer:
     
     def mergeFlights(self):
         ''' fix callsign flickering troubles '''
-        
+        # see forum posting: http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=3782
         cursor = self.db.cursor()
-        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NOT NULL AND a.overVlbg IS NOT NULL AND timestampdiff(MINUTE, a.ts, b.ts) BETWEEN 0 AND 45 AND aircrafts.hexident IS NOT NULL ORDER BY a.ts"
+        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id, b.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NOT NULL AND a.overVlbg IS NOT NULL AND timestampdiff(MINUTE, a.ts, b.ts) BETWEEN 0 AND 30 AND aircrafts.hexident IS NOT NULL ORDER BY a.ts"
         cursor.execute(sql)
         rs = cursor.fetchall()
         
@@ -40,7 +43,7 @@ class FlightAnalyzer:
         # format: HEXIDENT2: [CALLSIGN1, CALLSIGN2, ...], HEXIDENT2
         # flights belong together when:
         # - they have the same aircraft
-        # - flight timestamps differ 45' max
+        # - flight timestamps differ 30' max
         hextable = {}
         for record in rs:
             ts = record[0]
