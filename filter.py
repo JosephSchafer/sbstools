@@ -34,7 +34,7 @@ class FlightdataFilter:
         airbornevelocityids = self.getRemovableIds(flightid, 'airbornevelocitymessage')
         # state:
         # 0: not reduced
-        # 1: reduced 
+        # 1: reduced
         state = 1
         
         # if there are less than 50 records, do not reduce!
