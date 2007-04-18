@@ -15,15 +15,15 @@ SHAPEFILE = 'data/vlbg_wgs84_douglas_14.shp'
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
 class FlightMerger:
-    ''' object holding info about how to merge table '''
+    ''' class holding info about which flights shall be merged '''
     
     def __init__(self):
-        self.hexidents = {} # {'AE3463' : [23234, 34223, 34234]} hexident-to-flightid mapping
-        self.flightmappings = {} # {3234: [(342342, 'SWR343'), (234234, 'SWR5')]} mainflightid-to-mergedflightid mapping
-        self.flighttimestamps = {} # {3234: '2007-04-23 23:23'} flightid-to-timestamp mapping
+        self.hexidents = {} # hexident-to-flightid mapping, e.g. {'AE3463' : [23234, 34223, 34234]} 
+        self.flightmappings = {} # mainflightid-to-mergedflightid mapping, e.g. {3234: [(342342, 'SWR343'), (234234, 'SWR5')]} 
+        self.flighttimestamps = {} # flightid-to-timestamp mapping, e.g. {3234: '2007-04-23 23:23'} 
     
     def determineCallsign(self, flightid):
-        ''' choose the callsign which occurs most often '''
+        ''' select the callsign which is most likely the "correct" one for this flight '''
         
         mappings = self.flightmappings.get(flightid, None)
         if mappings == None:
@@ -39,9 +39,10 @@ class FlightMerger:
         logging.info("callsign: %s" %callsign)
         return callsign
 
-    def getMergeInfo(self):
-        ''' list of merging data '''
+    def getMergers(self):
+        ''' list of flights to be merged '''
         
+        # format: list of (flightid, callsign, [flightids to be merged])-entries
         mergeinfo = []
         for flightid, connectedflightids in self.flightmappings.items():
             callsign = self.determineCallsign(flightid)
@@ -52,46 +53,73 @@ class FlightMerger:
     
     def addFlight(self, flightid, callsign, hexident, timestamp):
         ''' adding flight to table '''
-        
+    
+        TIMESPAN = 30
+        # UNIX timestamp of current flightid
         ts = time.mktime( timestamp.timetuple() )
         
-        # do we already have the aircraft with hexident in our hexidents-table?
+        # check if aircraft (hexident) of flight already exists in hexidents-table
         if self.hexidents.has_key(hexident):
             ids = self.hexidents.get(hexident)
             
-            found = 0
+            mergeflight = False
             for id in ids[:]:
-                # calculate time difference in seconds between these two flights
+                # calculate time difference in seconds between current flight and flights in hextable 
                 ts_id = self.flighttimestamps.get(id)
                 timediff = abs(ts_id - ts)
                 
-                # HIT! flights shall be merged!
-                if (timediff / 60) <= 30:
-                    found = 1
+                # same aircraft and within time span of 30 minutes => current flight will be merged!
+                if (timediff) <= TIMESPAN*60:
+                    mergeflight = True
                     mappings = self.flightmappings.get( id )
                     if (flightid, callsign) not in mappings:
                         mappings.append( (flightid, callsign) )
                         self.flightmappings[id] = mappings
+                        self.flighttimestamps[flightid] = ts
                     break
                 
-            # this is a NEW flight!
-            if found == 0:
+            # same aircraft, but at later => this is an INDEPENDENT flight on its own!
+            if mergeflight == False:
                 ids.append( flightid )
                 self.hexidents[hexident] = ids
                 self.flightmappings[flightid] = [ (flightid, callsign) ]
                 self.flighttimestamps[flightid] = ts
                 
-        # totally new flight
+        # aircraft not yet known here => completely new flight
         else:
             self.hexidents[hexident] = [flightid, ]
             self.flightmappings[flightid] = [ (flightid, callsign) ]
             self.flighttimestamps[flightid] = ts
         
-    def getFlighttable(self):
-        ''' returning ready table '''
+    def logMergerStats(self, logger):
+        ''' return ready table '''
         
-        return self.hexidents#self.flightmappings #, self.flighttimestamps)
-
+        logger.info("merger statistics:")
+        diffmax = 0
+        cf_count = 0
+        
+        mergers = self.getMergers()
+        for flightid, callsign, connectedflights in mergers:
+            unixtime = self.flighttimestamps.get(flightid)
+            ts = datetime.datetime.fromtimestamp(unixtime).isoformat()
+            logger.info( "%i (%s)\t %s" %(flightid, callsign, ts) )
+            for connectedflight in connectedflights:
+                cf_unixtime = self.flighttimestamps.get(connectedflight)
+                cf_ts = datetime.datetime.fromtimestamp(cf_unixtime).isoformat()
+                diff = (cf_unixtime-unixtime)/60
+                # measure biggest difference
+                if diff > diffmax:
+                    diffmax = diff
+                # count number of all connected flights
+                cf_count += 1
+                
+                logger.info("\t|=%i\t%s\t%i" %(connectedflight, cf_ts, diff))
+            logger.info("\t----------------------------")
+        logger.info("%i\tmainflights" %len(mergers))
+        logger.info("%i\tconnected flights" %cf_count)
+        logger.info("%i\taverage connected flights" % (cf_count/len(mergers)))
+        logger.info("%i\tmaximum time difference" %diffmax)
+        
 class FlightAnalyzer:
     ''' analyzer of flights '''
     
@@ -132,7 +160,7 @@ class FlightAnalyzer:
         # see forum posting: http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=3782
         
         # mergestate:
-        # NULL ... undefined
+        # NULL ... unprocessed
         # 0 ... not merged
         # 1 ... merged
         cursor = self.db.cursor()
@@ -145,10 +173,11 @@ class FlightAnalyzer:
             ts, hexident, callsign, flightid, flightid2 = record
             tbl.addFlight(flightid, callsign, hexident, ts)
             
-        logging.info( tbl.getFlighttable() )
+        tbl.logMergerStats(logging)
         cursor.close()
+        return
         
-        mergeinfo = tbl.getMergeInfo()
+        mergeinfo = tbl.getMergers()
         cursor = self.db.cursor()
         cursor.execute("SET AUTOCOMMIT=0")
         for flightid, callsign, mergingids in mergeinfo:
