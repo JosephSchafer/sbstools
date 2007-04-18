@@ -118,7 +118,7 @@ class FlightAnalyzer:
         # -> 1. only check flights which were added more than 6 minutes ago
         # -> 2. only check flights where the most recent flightdata is older than 6 minutes
         # -> 3. only check flights which have already been merged, i.e. where mergestate NOT NULL
-        sql = "SELECT id FROM flights WHERE overVlbg IS NULL AND ts < NOW()-INTERVAL 6 MINUTE AND id NOT IN (SELECT DISTINCT flightid FROM flightdata WHERE time  > NOW()-INTERVAL 6 MINUTE) AND flights.aircraftid NOT in (SELECT DISTINCT aircraftid FROM flights INNER JOIN flightdata ON flights.id = flightdata.flightid AND ts > NOW()-INTERVAL 6 MINUTE)"
+        sql = "SELECT id FROM flights WHERE overVlbg IS NULL AND ts < NOW()-INTERVAL 6 MINUTE AND id NOT IN (SELECT DISTINCT flightid FROM flightdata WHERE time  > NOW()-INTERVAL 6 MINUTE) AND flights.aircraftid NOT in (SELECT DISTINCT aircraftid FROM flights INNER JOIN flightdata ON flights.id = flightdata.flightid AND ts > NOW()-INTERVAL 6 MINUTE) AND flights.mergestate IS NOT NULL"
         cursor.execute(sql)
         rs = cursor.fetchall()
         # loop over all flights and check'em 
@@ -159,22 +159,42 @@ class FlightAnalyzer:
                 sql = "UPDATE flights SET callsign='%s', mergestate=1 WHERE id=%i" %(callsign, flightid)
                 logging.debug(sql)
                 logging.info("set flight %i to callsign %s" %(flightid, callsign))
-                #cursor.execute(sql)
+                cursor.execute(sql)
                 for id in mergingids:
                     logging.info("merging flight %i with mainflight %i" %(id, flightid))
                     sql = "UPDATE flightdata SET flightid=%i WHERE flightid=%i" %(flightid, id)
                     logging.debug(sql)
-                    #cursor.execute(sql)
+                    cursor.execute(sql)
                     sql = "UPDATE airbornevelocitymessage SET flightid=%i WHERE flightid=%i" %(flightid, id)
                     logging.debug(sql)
-                    #cursor.execute(sql)
+                    cursor.execute(sql)
                     sql = "DELETE FROM flights WHERE id=%i" %id
                     logging.debug(sql)
-                    #cursor.execute(sql)
+                    cursor.execute(sql)
             except Exception, e:
                 logging.warn(str(e))
                 self.db.rollback()
             self.db.commit()
+            
+        # set mergestate-flag for non-callsign-flickering flights!
+        # UPDATE with subselect was not possible: http://dev.mysql.com/doc/refman/5.0/en/subquery-errors.html
+        sql = "SELECT DISTINCT id FROM flights WHERE flights.mergestate IS NULL AND flights.ts < NOW() - INTERVAL 30 MINUTE AND id NOT IN (SELECT DISTINCT a.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NOT NULL AND a.overVlbg IS NOT NULL AND ABS(timestampdiff(MINUTE, a.ts, b.ts)) BETWEEN 0 AND 30 AND a.ts <= NOW() - INTERVAL 30 MINUTE AND aircrafts.hexident IS NOT NULL AND a.ts >= '2007-04-01 00:00' AND b.ts >= '2007-04-01 00:00')"
+        cursor.execute(sql) 
+        logging.info(sql)
+        
+        # create a list of flights which do not have to be merged
+        flightids = []
+        rs = cursor.fetchall()
+        for record in rs:
+            flightids.append(record[0])
+        print flightids
+        
+        # tag the flights
+        for flightid in flightids:
+            sql = "UPDATE flights SET mergestate=0 WHERE ID=%i" %flightid
+            logging.info(sql)
+            cursor.execute(sql)
+        self.db.commit()
         cursor.close()
     
     def geoclassifyFlight(self, flightid):
@@ -236,7 +256,7 @@ def main():
     # merge flights: "callsign flickering" problem
     analyzer.mergeFlights()
     # check if flights crossed Vorarlberg
-    # analyzer.geoclassifyFlights()
+    analyzer.geoclassifyFlights()
     
     logging.info("### FLIGHTPROCESSOR finished")
  
