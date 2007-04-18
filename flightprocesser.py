@@ -34,9 +34,8 @@ class FlightMerger:
         # sort callsign so that None is last
         freq.sort(lambda a, b: cmp(b[0], a[0]))
         freq.sort(lambda a, b: cmp(b[1], a[1]))
-        logging.info(freq)
         callsign = freq[0][0]
-        logging.info("callsign: %s" %callsign)
+        logging.debug("callsign: %s" %callsign)
         return callsign
 
     def getMergers(self):
@@ -99,6 +98,9 @@ class FlightMerger:
         cf_count = 0
         
         mergers = self.getMergers()
+        # sort table by timestamp to make output more clear 
+        mergers.sort(lambda a, b: cmp(self.flighttimestamps.get(a[0]), self.flighttimestamps.get(b[0])))
+        
         for flightid, callsign, connectedflights in mergers:
             unixtime = self.flighttimestamps.get(flightid)
             ts = datetime.datetime.fromtimestamp(unixtime).isoformat()
@@ -117,7 +119,10 @@ class FlightMerger:
             logger.info("\t----------------------------")
         logger.info("%i\tmainflights" %len(mergers))
         logger.info("%i\tconnected flights" %cf_count)
-        logger.info("%i\taverage connected flights" % (cf_count/len(mergers)))
+        try:
+            logger.info("%i\taverage connected flights" % (cf_count/len(mergers)))
+        except ZeroDivisionError:
+            pass
         logger.info("%i\tmaximum time difference" %diffmax)
         
 class FlightAnalyzer:
@@ -164,7 +169,7 @@ class FlightAnalyzer:
         # 0 ... not merged
         # 1 ... merged
         cursor = self.db.cursor()
-        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id, b.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NOT NULL AND a.overVlbg IS NOT NULL AND ABS(timestampdiff(MINUTE, a.ts, b.ts)) BETWEEN 0 AND 30 AND a.ts <= NOW() - INTERVAL 30 MINUTE AND aircrafts.hexident IS NOT NULL AND a.ts >= '2007-04-01 00:00' AND b.ts >= '2007-04-01 00:00' ORDER BY a.ts"
+        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id, b.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NULL AND a.overVlbg IS NULL AND a.mergestate IS NULL AND b.mergestate IS NULL AND ABS(timestampdiff(MINUTE, a.ts, b.ts)) BETWEEN 0 AND 30 AND a.ts <= NOW() - INTERVAL 30 MINUTE AND aircrafts.hexident IS NOT NULL AND a.ts >= '2007-04-01 00:00' AND b.ts >= '2007-04-01 00:00' ORDER BY a.ts"
         cursor.execute(sql)
         rs = cursor.fetchall()
         
@@ -175,7 +180,6 @@ class FlightAnalyzer:
             
         tbl.logMergerStats(logging)
         cursor.close()
-        return
         
         mergeinfo = tbl.getMergers()
         cursor = self.db.cursor()
@@ -282,7 +286,7 @@ def main():
     
     analyzer = FlightAnalyzer()
     cursor = analyzer.db.cursor()
-    # merge flights: "callsign flickering" problem
+    # merge flights "callsign flickering" problem
     analyzer.mergeFlights()
     # check if flights crossed Vorarlberg
     analyzer.geoclassifyFlights()
