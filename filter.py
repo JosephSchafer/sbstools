@@ -1,12 +1,12 @@
 #!/usr/bin/python
 # Applying reduction filter to flights
-# i.e. reducing the amount of data
+# i.e. reducing the amount of data, 
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
 import time
 import MySQLdb
 import logging
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
 class FlightdataFilter:
     ''' filter data to reduce amount '''
@@ -30,21 +30,22 @@ class FlightdataFilter:
         # 1b. get ids for data to be removed from table airbornevelocitymessage
         # 2b. remove records
         # 3. update status of flight record in flights table 
-        flightdataids = self.getRemovableIds(flightid, 'flightdata')
-        airbornevelocityids = self.getRemovableIds(flightid, 'airbornevelocitymessage')
+        flightdataids  = self.categorizeFlightdata(flightid, 'flightdata')
+        airbornevelocityids = self.categorizeFlightdata(flightid, 'airbornevelocitymessage')
         # state:
         # 0: not reduced
         # 1: reduced
         state = 1
         
         # if there are less than 50 records, do not reduce!
-        if len(flightdataids) < 5 or len(airbornevelocityids) < 5:
+        if len(flightdataids) < 50 or len(airbornevelocityids) < 50:
             logging.info("length removable flightdata records: %i" %len(flightdataids))
             logging.info("length removable airbornevelocitymessage records: %i" %len(airbornevelocityids))
             logging.info("not reducing flight# %i" %flightid)
            
             flightdataids = airbornevelocityids = []
             state = 0 # not reduced
+        logging.info("flight #%i" %flightid)
         
         try:
             # begin transaction
@@ -52,33 +53,34 @@ class FlightdataFilter:
             # __FIXME__: DELETE FROM flightdata WHERE id IN (x1, x2, x3, ...xn)
             for id in flightdataids:
                 sql = "DELETE FROM flightdata WHERE id=%i" %id
-                logging.info(sql)
+                logging.debug(sql)
                 cursor.execute(sql)
             for id in airbornevelocityids:
                 sql = "DELETE FROM airbornevelocitymessage WHERE id=%i" %id
-                logging.info(sql)
+                logging.debug(sql)
                 cursor.execute(sql)
             
             sql = "UPDATE flights SET state=%i WHERE id=%i" %(state, flightid)
-            logging.info(sql)
+            logging.debug(sql)
             cursor.execute(sql)
             
         except:
             # on error rollback the complete transaction
             self.db.rollback()
             logging.error("rollback")
-            
-        # commit transaction
-        self.db.commit()
+        else:
+            # commit transaction
+            self.db.rollback()
+            #self.db.commit()
         cursor.close()
     
-    def getRemovableIds(self, flightid, table='flightdata'):
+    def categorizeFlightdata(self, flightid, table='flightdata'):
         ''' return ids to be deleted '''
         
         ids = []
         cursor = self.db.cursor()
         sql = "SELECT id FROM %s WHERE flightid=%i" %(table, flightid)
-        logging.info(sql)
+        logging.debug(sql)
         cursor.execute(sql)
         rs = cursor.fetchall()
         for record in rs:
@@ -89,16 +91,29 @@ class FlightdataFilter:
         # consider the timestamp of the entries 
         
         # loop over all ids and select those to delete
-        step = 10 # keep ~10% of the data
-        removeableids = []
-        for id in ids:
-            if id % step != 0:
-                removeableids.append(id)
-        # ensure that the most recent flightdataentry for the particular flight is not going to be removed
-        if len(ids) and ids[-1] in removeableids:
-            removeableids.remove(ids[-1])
+        step = 20 # keep ~5% of the data
+        dispensableids = []
+        
+        for i in range( len(ids) ):
+            if i % step != 0:
+                dispensableids.append( ids[i] )
+        # ensure that the most recent entry for the particular flight is kept
+        if len(ids) and ids[-1] in dispensableids:
+            dispensableids.remove( ids[-1] )
         cursor.close()
-        return removeableids
+      
+        # nice text output
+        logging.info("flight #%i (%s)" %(flightid, table) )
+        for id in ids:
+            if id in dispensableids:
+                logging.info("\t|-%i REMOVE!" %id)
+            else:
+                logging.info("\t|-%i KEEP!" %id)
+        logging.info("\t-------------------------")
+        logging.info("%i entries of %s kept" %(len(ids) - len(dispensableids), table))
+        logging.info("%i entries of %s removed" %(len(dispensableids), table))
+        logging.info("\t=========================")
+        return dispensableids
     
 def main():
     logging.info("### FILTER started")
@@ -106,10 +121,10 @@ def main():
     
     cursor = filter.db.cursor()
     # grab all flights, which:
-    # 1. did _not_ cross Vorarlberg
-    # 2. did _not_ have the callsign flickering problem (represented by the subselect)
-    # 3. are not yet classified/reduced (state)
-    sql = "SELECT id FROM flights WHERE state IS NULL AND overVlbg=0 AND id NOT IN (SELECT DISTINCT a.id FROM flights AS a, flights as b WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND timestampdiff(MINUTE, a.ts, b.ts) BETWEEN 0 AND 45)"
+    # - are not yet classified/reduced (state IS NULL)
+    # - did _not_ cross Vorarlberg (overVlbg=0)
+    # - where the callsign flickering problem was solved (mergestate IS NOT NULL)
+    sql = "SELECT id FROM flights WHERE state IS NULL AND overVlbg=0 AND mergestate IS NOT NULL"
     cursor.execute(sql)
     rs = cursor.fetchall()
     
