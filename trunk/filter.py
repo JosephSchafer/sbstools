@@ -69,9 +69,7 @@ class FlightdataFilter:
             self.db.rollback()
             logging.error("rollback")
         else:
-            # commit transaction
-            self.db.rollback()
-            #self.db.commit()
+            self.db.commit()
         cursor.close()
     
     def categorizeFlightdata(self, flightid, table='flightdata'):
