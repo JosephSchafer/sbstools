@@ -21,7 +21,7 @@ class KMLCreator:
         ''' create kml file! '''
         
         cursor = self.db.cursor()
-        sql = "SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '2007-04-17 00:00' AND '2007-04-18 00:00' AND flights.overVlbg=1;"
+        sql = "SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '2007-04-17 12:00' AND '2007-04-18 00:00' AND flights.overVlbg=1;"
         cursor.execute(sql)
         rs = cursor.fetchall()
         # loop over all flights and check'em 
@@ -39,21 +39,68 @@ class KMLCreator:
             c = 0
             SKIP = 30
             length = len(rs2)
-            SKIP = length / 20
+            SKIP = length / 25
             coordinateinfo = ""     
             logging.info(SKIP)
             for data in rs2:
                 logging.log(logging.INFO, "loop")
                 longitude= data[0]
                 latitude = data[1]
-                if latitude > 0 and longitude > 0 and c % SKIP == 0:
-                    coordinateinfo += "%f,%f,0 \n" %(longitude, latitude)
-                c += 1
+                # damn, some flights have pretty strange GPS-info! define a value range
+                if latitude > 40 and latitude < 50 and longitude > 8 and longitude < 15: 
+                    if c % SKIP == 0:
+                        coordinateinfo += "%f,%f,0 \n" %(longitude, latitude)
+                    c += 1
             cursor2.close()
             placemark += """<Placemark>
       <name>Absolute Extruded</name>
       <description>Transparent green wall with yellow outlines</description>
-      <styleUrl>#yellowLineGreenPoly</styleUrl>
+      <styleUrl>#red</styleUrl>
+      <LineString>
+        <extrude>1</extrude>
+        <tessellate>1</tessellate>
+        <altitudeMode>absolute</altitudeMode>
+        <coordinates>%s</coordinates>
+      </LineString>
+    </Placemark>""" %coordinateinfo
+            
+        cursor.close() 
+    
+        cursor = self.db.cursor()
+        sql = "SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '2007-04-17 12:00' AND '2007-04-18 00:00' AND flights.overVlbg=0;"
+        cursor.execute(sql)
+        rs = cursor.fetchall()
+        # loop over all flights and check'em 
+        for record in rs:
+            flightid = record[0]
+            logging.log(logging.INFO, flightid)
+            sql = "SELECT longitude, latitude FROM flightdata WHERE flightid=%i" %flightid
+            logging.info(sql)
+            cursor2 = self.db.cursor()
+            cursor2.execute(sql)
+            rs2 = cursor2.fetchall()
+            # only use 10% of data!
+            c = 0
+            SKIP = 30
+            length = len(rs2)
+            SKIP = length / 5
+            coordinateinfo = ""     
+            logging.info(SKIP)
+            for data in rs2:
+                logging.log(logging.INFO, "loop")
+                longitude= data[0]
+                latitude = data[1]
+                # damn, some flights have pretty strange GPS-info! define a value range
+                if latitude > 40 and latitude < 50 and longitude > 8 and longitude < 15: 
+                    if SKIP and c % SKIP == 0:
+                        coordinateinfo += "%f,%f,0 \n" %(longitude, latitude)
+                    c += 1
+            cursor2.close()
+            if length > 50:
+                placemark += """<Placemark>
+      <name>Absolute Extruded</name>
+      <description>Transparent green wall with yellow outlines</description>
+      <styleUrl>#blue</styleUrl>
       <LineString>
         <extrude>1</extrude>
         <tessellate>1</tessellate>
@@ -73,7 +120,16 @@ class KMLCreator:
     <description>Examples of paths. Note that the tessellate tag is by default
       set to 0. If you want to create tessellated lines, they must be authored
       (or edited) directly in KML.</description>
-    <Style id="yellowLineGreenPoly">
+    <Style id="red">
+      <LineStyle>
+        <color>7d0000ff</color>
+        <width>1</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>7d0000ff</color>
+      </PolyStyle>
+    </Style>
+    <Style id="blue">
       <LineStyle>
         <color>7dff0000</color>
         <width>1</width>
