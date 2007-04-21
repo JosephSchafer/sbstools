@@ -49,7 +49,7 @@ class KMLCreator:
                 # damn, some flights have pretty strange GPS-info! define a value range
                 if latitude > 40 and latitude < 50 and longitude > 8 and longitude < 15: 
                     if c % SKIP == 0:
-                        coordinateinfo += "%f,%f,0 \n" %(longitude, latitude)
+                        coordinateinfo += "%f,%f,20000 \n" %(longitude, latitude)
                     c += 1
             cursor2.close()
             placemark += """<Placemark>
@@ -57,7 +57,7 @@ class KMLCreator:
       <description>Transparent green wall with yellow outlines</description>
       <styleUrl>#red</styleUrl>
       <LineString>
-        <extrude>1</extrude>
+        <extrude>0</extrude>
         <tessellate>1</tessellate>
         <altitudeMode>absolute</altitudeMode>
         <coordinates>%s</coordinates>
@@ -93,7 +93,7 @@ class KMLCreator:
                 # damn, some flights have pretty strange GPS-info! define a value range
                 if latitude > 40 and latitude < 50 and longitude > 8 and longitude < 15: 
                     if SKIP and c % SKIP == 0:
-                        coordinateinfo += "%f,%f,0 \n" %(longitude, latitude)
+                        coordinateinfo += "%f,%f,20000 \n" %(longitude, latitude)
                     c += 1
             cursor2.close()
             if length > 50:
@@ -102,7 +102,7 @@ class KMLCreator:
       <description>Transparent green wall with yellow outlines</description>
       <styleUrl>#blue</styleUrl>
       <LineString>
-        <extrude>1</extrude>
+        <extrude>0</extrude>
         <tessellate>1</tessellate>
         <altitudeMode>absolute</altitudeMode>
         <coordinates>%s</coordinates>
