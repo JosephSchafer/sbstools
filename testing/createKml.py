@@ -21,13 +21,17 @@ class KMLCreator:
         ''' create kml file! '''
         
         cursor = self.db.cursor()
-        sql = "SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '2007-04-17 12:00' AND '2007-04-18 00:00' AND flights.overVlbg=1;"
+        sql = "SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '2007-04-17 00:00' AND '2007-04-18 00:00' AND flights.overVlbg=1;"
         cursor.execute(sql)
         rs = cursor.fetchall()
         # loop over all flights and check'em 
         placemark = ""
         for record in rs:
             flightid = record[0]
+            callsign = record[1]
+            hexident = record[2]
+            ts = record[3]
+      
             logging.log(logging.INFO, flightid)
             sql = "SELECT longitude, latitude FROM flightdata WHERE flightid=%i" %flightid
             logging.info(sql)
@@ -41,6 +45,7 @@ class KMLCreator:
             length = len(rs2)
             SKIP = length / 25
             coordinateinfo = ""     
+            clist = []
             logging.info(SKIP)
             for data in rs2:
                 logging.log(logging.INFO, "loop")
@@ -50,11 +55,12 @@ class KMLCreator:
                 if latitude > 40 and latitude < 50 and longitude > 8 and longitude < 15: 
                     if c % SKIP == 0:
                         coordinateinfo += "%f,%f,20000 \n" %(longitude, latitude)
+                        clist.append( (longitude, latitude) )
                     c += 1
             cursor2.close()
             placemark += """<Placemark>
-      <name>Absolute Extruded</name>
-      <description>Transparent green wall with yellow outlines</description>
+      <name>-</name>
+      <description>-</description>
       <styleUrl>#red</styleUrl>
       <LineString>
         <extrude>0</extrude>
@@ -63,7 +69,18 @@ class KMLCreator:
         <coordinates>%s</coordinates>
       </LineString>
     </Placemark>""" %coordinateinfo
-            
+        
+            # append location icon
+            long, lat = clist[len(clist)/2]
+            placemark += """<Placemark>
+            <name>flight: %s  aircraft: %s  spotter time: %s</name>
+            <styleUrl>#normalPlacemark</styleUrl>
+            <Point>
+            <coordinates>%f,%f,20000</coordinates>
+            </Point>
+            </Placemark>
+        """ % (callsign, hexident, ts, long, lat)
+        
         cursor.close() 
     
         cursor = self.db.cursor()
@@ -98,8 +115,8 @@ class KMLCreator:
             cursor2.close()
             if length > 50:
                 placemark += """<Placemark>
-      <name>Absolute Extruded</name>
-      <description>Transparent green wall with yellow outlines</description>
+      <name>-</name>
+      <description>-</description>
       <styleUrl>#blue</styleUrl>
       <LineString>
         <extrude>0</extrude>
@@ -137,6 +154,14 @@ class KMLCreator:
       <PolyStyle>
         <color>7dff0000</color>
       </PolyStyle>
+    </Style>
+    <Style id="normalPlacemark">
+      <IconStyle>
+        <Icon>
+          <href>http://www.wahuu.at/~db/flights/icon.png</href>
+        </Icon>
+        <scale>0.5</scale>
+      </IconStyle>
     </Style>
     <Folder>
     <description>flights</description>
