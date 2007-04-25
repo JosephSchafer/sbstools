@@ -21,7 +21,7 @@ class KMLCreator:
     def createFile(self):
         ''' create kml file! '''
        
-	sql = self.basesql + " AND flights.overVlbg=1" 
+        sql = self.basesql + " AND flights.overVlbg=1" 
         cursor = self.db.cursor()
         cursor.execute(sql)
         rs = cursor.fetchall()
