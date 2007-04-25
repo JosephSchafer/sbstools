@@ -13,15 +13,16 @@ class KMLCreator:
     database = 'flightdb'
     user = 'flight'
     password = 'flyaway'
-    
+    basesql = "SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '2007-04-17 00:00' AND '2007-04-18 00:00'"
+ 
     def __init__(self):
         self.db = MySQLdb.connect(host = self.host, db = self.database, user = self.user, passwd = self.password)
       
     def createFile(self):
         ''' create kml file! '''
-        
+       
+	sql = self.basesql + " AND flights.overVlbg=1" 
         cursor = self.db.cursor()
-        sql = "SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '2007-04-17 00:00' AND '2007-04-18 00:00' AND flights.overVlbg=1;"
         cursor.execute(sql)
         rs = cursor.fetchall()
         # loop over all flights and check'em 
@@ -48,7 +49,6 @@ class KMLCreator:
             clist = []
             logging.info(SKIP)
             for data in rs2:
-                logging.log(logging.INFO, "loop")
                 longitude= data[0]
                 latitude = data[1]
                 # damn, some flights have pretty strange GPS-info! define a value range
@@ -84,7 +84,7 @@ class KMLCreator:
         cursor.close() 
     
         cursor = self.db.cursor()
-        sql = "SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '2007-04-17 12:00' AND '2007-04-18 00:00' AND flights.overVlbg=0;"
+        sql = self.basesql + " AND flights.overVlbg=0"
         cursor.execute(sql)
         rs = cursor.fetchall()
         # loop over all flights and check'em 
@@ -104,7 +104,6 @@ class KMLCreator:
             coordinateinfo = ""     
             logging.info(SKIP)
             for data in rs2:
-                logging.log(logging.INFO, "loop")
                 longitude= data[0]
                 latitude = data[1]
                 # damn, some flights have pretty strange GPS-info! define a value range
