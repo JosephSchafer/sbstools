@@ -13,7 +13,7 @@ class KMLCreator:
     database = 'flightdb'
     user = 'flight'
     password = 'flyaway'
-    basesql = "SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '2007-04-17 00:00' AND '2007-04-18 00:00'"
+    basesql = "SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '2007-04-23 00:00' AND '2007-04-24 00:00'"
  
     def __init__(self):
         self.db = MySQLdb.connect(host = self.host, db = self.database, user = self.user, passwd = self.password)
@@ -73,7 +73,8 @@ class KMLCreator:
             # append location icon
             long, lat = clist[len(clist)/2]
             placemark += """<Placemark>
-            <name>flight: %s  aircraft: %s  spotter time: %s</name>
+            <name>flight: %s</name>
+            <description>aircraft: %s  spotted at: %s</description>
             <styleUrl>#normalPlacemark</styleUrl>
             <Point>
             <coordinates>%f,%f,20000</coordinates>
@@ -159,7 +160,6 @@ class KMLCreator:
         <Icon>
           <href>http://www.wahuu.at/~db/flights/icon.png</href>
         </Icon>
-        <scale>0.5</scale>
       </IconStyle>
     </Style>
     <Folder>
