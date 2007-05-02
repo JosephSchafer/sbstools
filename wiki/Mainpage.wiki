@@ -47,3 +47,5 @@ May 2007?
 ==Future==
 
   * Usage of an object relational mapper: http://www.sqlalchemy.org http://entwickler.de/zonen/portale/psecom,id,101,online,1033.html
+
+  * Making flightobserver independent of ids provided by Basestation software!
