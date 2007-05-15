@@ -6,7 +6,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 FILENAME = 'flights.kml'
-overVlbg = (0, 1)
+overVlbg = (1,)
 
 class KMLCreator:
     ''' creator of kml files '''
@@ -28,7 +28,7 @@ class KMLCreator:
     def createFile(self):
         ''' create kml file! '''
         basesql = "SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '%s' AND '%s'" % (self.startdate, self.enddate)
-        #logging.info(basesql)
+        logging.info(basesql)
         if 1 in overVlbg:
             sql = basesql + " AND flights.overVlbg=1" 
             cursor = self.db.cursor()
@@ -43,7 +43,7 @@ class KMLCreator:
                 ts = record[3]
           
                 logging.log(logging.INFO, flightid)
-                sql = "SELECT longitude, latitude FROM flightdata WHERE flightid=%i" %flightid
+                sql = "SELECT longitude, latitude, altitude FROM flightdata WHERE flightid=%i" %flightid
                 logging.info(sql)
                 cursor2 = self.db.cursor()
                 cursor2.execute(sql)
@@ -60,10 +60,11 @@ class KMLCreator:
                 for data in rs2:
                     longitude= data[0]
                     latitude = data[1]
+                    altitude = data[2]
                     # damn, some flights have pretty strange GPS-info! define a value range
                     if latitude > 40 and latitude < 50 and longitude > 8 and longitude < 15: 
                         if c % SKIP == 0:
-                            coordinateinfo += "%f,%f,20000 \n" %(longitude, latitude)
+                            coordinateinfo += "%f,%f,%d \n" %(longitude, latitude, altitude)
                             clist.append( (longitude, latitude) )
                         c += 1
                 cursor2.close()
