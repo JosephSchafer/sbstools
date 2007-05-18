@@ -45,9 +45,8 @@ class FlightMerger:
         mergeinfo = []
         for flightid, connectedflightids in self.flightmappings.items():
             callsign = self.determineCallsign(flightid)
-            # remove 1st entry as it is flightid itself 
-            del connectedflightids[0]
-            mergeinfo.append( (flightid, callsign, [id for id, callsign in connectedflightids]) )
+            # skip 1st entry as it is mergeflight itself 
+            mergeinfo.append( (flightid, callsign, [id for id, callsign in connectedflightids[1:]]) )
         return mergeinfo
     
     def addFlight(self, flightid, callsign, hexident, timestamp):
@@ -68,7 +67,7 @@ class FlightMerger:
                 timediff = abs(ts_id - ts)
                 
                 # same aircraft and within time span of 30 minutes => current flight will be merged!
-                if (timediff) <= TIMESPAN*60:
+                if timediff <= TIMESPAN*60:
                     mergeflight = True
                     mappings = self.flightmappings.get( id )
                     if (flightid, callsign) not in mappings:
@@ -77,7 +76,7 @@ class FlightMerger:
                         self.flighttimestamps[flightid] = ts
                     break
                 
-            # same aircraft, but at later => this is an INDEPENDENT flight on its own!
+            # same aircraft, but appeared later => this is an INDEPENDENT flight!
             if mergeflight == False:
                 ids.append( flightid )
                 self.hexidents[hexident] = ids
@@ -177,7 +176,7 @@ class FlightAnalyzer:
         for record in rs:
             ts, hexident, callsign, flightid, flightid2 = record
             tbl.addFlight(flightid, callsign, hexident, ts)
-            
+           
         tbl.logMergerStats(logging)
         cursor.close()
         
