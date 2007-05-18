@@ -9,7 +9,7 @@ import MySQLdb
 import logging
 
 # found this very nice online tool http://www.mapshaper.org to simplify the map
-# the simpliefied map is made public 
+# the simplified map is publicly available 
 SHAPEFILE = 'data/vlbg_wgs84_douglas_14.shp'
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
