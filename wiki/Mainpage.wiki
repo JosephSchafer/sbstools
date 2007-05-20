@@ -21,6 +21,7 @@ fully functional solution till April 1st, 2007 to start recording.
   * Software to filter flight data stored in mysql database by geographical aspects. (GPS)
   * [GISSoftwareEvaluation]
   * Data reduction: remove 90% of flightdata&airbornevelocitymessage for flights not crossing Vorarlberg
+  * remove senseless flightdata! (DELETE FROM flightdata WHERE LONGITUDE <= 3 OR LONGITUDE >=15 OR LATITUDE <= 40 OR LATITUDE >= 50;)
 
 *Timeframe*
 
