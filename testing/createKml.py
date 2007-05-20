@@ -53,14 +53,9 @@ function load() {
 </head>
   <body onload="load()" onunload="GUnload()">
     <div id="map" style="width: 1000px; height: 700px"></div>
-    <div>
-    <ul>
-        %s
-    </ul>
-    </div>
   </body>
 </html>
-""" % (name, listfragment)
+""" % name
         return info
 
 class KMLCreator:
@@ -83,6 +78,10 @@ class KMLCreator:
         self.startdate = startdate
         self.enddate = enddate
     
+    def setIsZero(self, isZero):
+        ''' altitude to zero?'''
+        self.isZero = int(isZero)
+        
     def setIsPlacemarks(self, state):
         ''' turn on/off placemarks for flights '''
         self.isPlacemarks = state
@@ -115,10 +114,10 @@ class KMLCreator:
                 
                 # only use 10% of data!
                 c = 0
-                SKIP = 30
-                length = len(rs2)
-                SKIP = length / 25
-                SKIP = 30
+                #SKIP = 30
+                #length = len(rs2)
+                #SKIP = length / 25
+                SKIP = 2#0
                 if SKIP == 0:
                     SKIP = 1
                 coordinateinfo = ""     
@@ -129,11 +128,15 @@ class KMLCreator:
                     latitude = data[1]
                     altitude = data[2]
                     time = data[3]
+                    real_altitude = altitude
+                    
+                    if self.isZero == 1:
+                        altitude = 0
                     # damn, some flights have pretty strange GPS-info! define a value range
                     if latitude > 40 and latitude < 50 and longitude > 8 and longitude < 15: 
                         if c % SKIP == 0:
                             coordinateinfo += "%f,%f,%d \n" %(longitude, latitude, altitude)
-                            clist.append( (longitude, latitude, altitude, time) )
+                            clist.append( (longitude, latitude, real_altitude, time) )
                         c += 1
                 cursor2.close()
                 placemark += """<Placemark>
@@ -147,7 +150,7 @@ class KMLCreator:
             <coordinates>%s</coordinates>
           </LineString>
         </Placemark>""" %coordinateinfo
-            
+                # recover altitude from backup ;)
                 if self.isPlacemarks:
                     # append location icon which is most close to longitude 9.6
                     longitude = latitude = altitude = 0
@@ -170,16 +173,30 @@ class KMLCreator:
                             break
                     #long, lat, alt = clist[len(clist)/2]
                     long, lat, alt = longitude, latitude, altitude
-                    self.htmlcreator.addFlight( callsign, hexident, ts) 
+                    if self.isZero == 1:
+                        alt = 0
+                    #self.htmlcreator.addFlight( callsign, hexident, ts)
+                    if callsign == None:
+                        callsign = "non000"
+                    airline = callsign[0:3]
+                    number = callsign[3:]
+                    # remove leading zeros
+                    try:
+                        number = str(int(number))
+                    except ValueError:
+                        pass
+                    date = str(ts)[0:10]
+                    flightstatslink = "<![CDATA[<a href='http://www.flightstats.com/go/FlightStatus/flightStatusByFlight.do?airline=%s&flightNumber=%s&departureDate=%s'>flightstats</a> | %s | %s | altitude: %sft (%dm)]]>" % (airline, number, date, hexident, ts, altitude, int(altitude) / 3.2808399)
+                    #<styleUrl>#normalPlacemark</styleUrl>
                     placemark += """\n<Placemark>
-                    <description>hexident: %s time: %s</description>
+                    <description>%s</description>
                     <name>callsign: %s</name>
-                    <styleUrl>#normalPlacemark</styleUrl>
+                    
                     <Point>
                     <coordinates>%f,%f,%d</coordinates>
                     </Point>
                     </Placemark>
-                """ % (hexident, ts, callsign, long, lat, alt)
+                """ % (flightstatslink, callsign, long, lat, alt)
             cursor.close() 
         
         # flights _NOT_ crossing Vorarlberg
@@ -292,6 +309,7 @@ def main():
     parser.add_option("-e", "--enddate", dest="enddate", help="enddate", metavar="ENDDATE")
     parser.add_option("-n", "--name", dest="filename", help="filename", metavar="NAME")
     parser.add_option("-p", "--placemarks", action="store_false", dest="isPlacemarks", default=True, help="add placemarks to each flight")
+    parser.add_option("-z","--zero", dest="isZero", default=False, help="set altitude to 0")
     options, args = parser.parse_args()
     startdate = options.startdate
     enddate = options.enddate
@@ -301,6 +319,7 @@ def main():
     creator = KMLCreator(options.filename)
     creator.setLimits(options.startdate, options.enddate)
     creator.setIsPlacemarks(options.isPlacemarks)
+    creator.setIsZero(options.isZero)
     creator.createFile()
     logging.info("### KMLCreator finished")
  
