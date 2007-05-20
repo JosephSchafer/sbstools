@@ -140,6 +140,17 @@ class FlightAnalyzer:
         self.feature = self.layer.GetNextFeature()
         self.geometry = self.feature.GetGeometryRef()
     
+    def filterData(self):
+        ''' remove senseless data '''
+        
+        # sometimes senseless GPS-data is sent by aircrafts!
+        # IMPORTANT! the range is only valid for certain locations, here: Hittisau
+        # guess this filtering should happen at flightobserver.py
+        cursor = self.db.cursor()
+        sql = "DELETE FROM flightdata WHERE flightid IN (SELECT id FROM flights WHERE mergestate IS NULL) AND (LONGITUDE <= 3 OR LONGITUDE >=15 OR LATITUDE <= 40 OR LATITUDE >= 50)"
+        cursor.execute(sql)
+        cursor.close()
+        
     def geoclassifyFlights(self):
         ''' check if flight crossed a certain region '''
         
@@ -285,6 +296,8 @@ def main():
     
     analyzer = FlightAnalyzer()
     cursor = analyzer.db.cursor()
+    # remove senseless data!
+    analyzer.filterData()
     # merge flights "callsign flickering" problem
     analyzer.mergeFlights()
     # check if flights crossed Vorarlberg
