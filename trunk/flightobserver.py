@@ -239,10 +239,10 @@ def main():
         logging.info("number of running threads: %i" %threadcount)
         
         # Start handler threads till MAXTHRADS is reached:
-        for x in range(threadcount, MAXTHREADS + 1):
-            handler = MessageHandler()
-            handler.setName('thread #%i' %x)
-            handler.start()
+        # for x in range(threadcount, MAXTHREADS + 1):
+        #    handler = MessageHandler()
+        #    handler.setName('thread #%i' %x)
+        #    handler.start()
        
        # start reading from Basestation's port
        # and putting messages in a queue
@@ -258,6 +258,15 @@ def main():
                     pass
                     #raise Exception("empty string read from port")
                 
+                # create the threads which are responsible for processing the message queue
+                # if a thread dies, a new one is automatically recreated
+                if threading.activeCount() < MAXTHREADS + 1:
+                    try:
+                        handler = MessageHandler()
+                        handler.setName('thread #%i (%s)' % (threading.activeCount() + 1, time.strftime("%d.%m.%Y %H:%M")))
+                        handler.start()
+                    except Exception, e:
+                        logging.warn("thread exception: %s" %str(e))
             except EOFError, e:
                 logging.warn("lost telnet connection %s" %str(e))
                 break
