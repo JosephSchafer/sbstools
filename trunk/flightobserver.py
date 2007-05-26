@@ -50,8 +50,11 @@ class MessageHandler(threading.Thread):
         ''' thread runner '''
         while True:
             msg = queue.get()
-            self.processMessage(msg)
-        
+            try:
+                self.processMessage(msg)
+            except MySQLdb.OperationalError, e:
+                logging.warn( str(e) + "message %s lost" %msg)
+                
     def _createMap(self, msgparts, fields):
         ''' map msg parts to fields '''
         mapping = dict(zip(fields, msgparts))
@@ -144,7 +147,7 @@ class MessageHandler(threading.Thread):
                 self.collector.logAirborneVelocityMessage(mapping.get('flightid'), mapping.get('groundspeed'), mapping.get('verticalrate'), mapping.get('track'), mapping.get('datemessagegenerated') + ' ' + mapping.get('timemessagegenerated'))
         else:
             # unknown msgtype!
-            pass
+            logging.warn("unknown messagetype: %s" %str(msgtype))
 
 class DataCollector:
     ''' database agent '''
@@ -217,7 +220,7 @@ class DataCollector:
 def main():
 
     TIMEOUT = 60
-    MAXTHREADS = 3
+    MAXTHREADS = 2
     logging.info("starting daemon")
     # try several times to reconnect to host
     # Win running in VMWare Server takes some time to boot itself 
@@ -234,16 +237,6 @@ def main():
             else:
                 break
         
-        # currently running threads: mainthread + handlerthreads
-        threadcount = threading.activeCount()
-        logging.info("number of running threads: %i" %threadcount)
-        
-        # Start handler threads till MAXTHRADS is reached:
-        # for x in range(threadcount, MAXTHREADS + 1):
-        #    handler = MessageHandler()
-        #    handler.setName('thread #%i' %x)
-        #    handler.start()
-       
        # start reading from Basestation's port
        # and putting messages in a queue
         while True:
@@ -261,9 +254,12 @@ def main():
                 # create the threads which are responsible for processing the message queue
                 # if a thread dies, a new one is automatically recreated
                 if threading.activeCount() < MAXTHREADS + 1:
+                    # currently running threads: mainthread + handlerthreads
+                    threadcount = threading.activeCount()
+                    logging.info("number of running threads: %i" %threadcount)
                     try:
                         handler = MessageHandler()
-                        handler.setName('thread #%i (%s)' % (threading.activeCount() + 1, time.strftime("%d.%m.%Y %H:%M")))
+                        handler.setName('#%i (born %s)' % (threadcount + 1, time.strftime("%d.%m.%Y %H:%M")))
                         handler.start()
                     except Exception, e:
                         logging.warn("thread exception: %s" %str(e))
