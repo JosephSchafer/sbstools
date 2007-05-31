@@ -193,8 +193,7 @@ class DataCollector:
         cursor.close()
          
     def logFlightdata(self, flightid, altitude, latitude, longitude, time, time_ms=0, transmissiontype=0):
-        """ store data in mysql """
-        # get database cursor
+        """ store flightdata """
         cursor = self.db.cursor()
         sql = "INSERT INTO flightdata (flightid, altitude, latitude, longitude, time, time_ms, transmissiontype) VALUES (%s, %s, %s, %s, '%s', %i, %i)" %(str(flightid), str(altitude), str(latitude), str(longitude), time, time_ms, transmissiontype)
         logging.info(sql)
