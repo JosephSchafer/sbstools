@@ -1,0 +1,3 @@
+# getting all flights over Vorarlberg within a given time range (here: all flights on April 1st, 2007)
+# performance optimized 
+SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '2007-04-01 00:00' AND '2007-04-02 00:00' AND flights.overVlbg=1;    
