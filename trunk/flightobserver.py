@@ -16,9 +16,7 @@ import MySQLdb
 import time
 import threading
 import Queue
-
-HOST = "192.168.2.110" # ip-address Basestation is running at
-PORT = 30003 # port 30003 is Basestation's default
+from ConfigParser import SafeConfigParser
 
 LOGFILE = '/var/log/flightobserver.log'
 PIDFILE = '/var/run/pyflightobserver.pid'
@@ -42,9 +40,9 @@ def setupLogging():
 class MessageHandler(threading.Thread):
     ''' process messages '''
    
-    def __init__(self):
+    def __init__(self, host, db, user, password):
         threading.Thread.__init__(self)
-        self.collector = DataCollector()
+        self.collector = DataCollector(host, db, user, password)
  
     def run(self):
         ''' thread runner '''
@@ -155,12 +153,8 @@ class MessageHandler(threading.Thread):
 class DataCollector:
     ''' database agent '''
     
-    database = 'flightdb'
-    user = 'flight'
-    password = 'flyaway'
-    
-    def __init__(self):
-        self.db = MySQLdb.connect(host = 'localhost', db = self.database, user = self.user, passwd = self.password)
+    def __init__(self, host, db, user, password):
+        self.db = MySQLdb.connect(host = host, db = db, user = user, passwd = password)
       
     def logNewFlight(self, flightid, aircraftid):
         ''' flight appears on radar screen for the first time '''
@@ -221,14 +215,18 @@ class DataCollector:
         cursor.close()
         
 def main():
-
-    TIMEOUT = 60
-    MAXTHREADS = 2
-    logging.info("starting daemon")
+    logging.info("starting daemon ...")
+    logging.info("reading configuration ...")
+    cfg = SafeConfigParser()
+    cfg.read(sys.path[0] + os.sep + 'sbstools.cfg')
+    HOST = cfg.get('basestation', 'host') #"192.168.2.110" # ip-address Basestation is running at
+    PORT = cfg.getint('basestation', 'port') #30003 # port 30003 is Basestation's default
+    TIMEOUT = cfg.getint('flightobserver', 'timeout')
+    MAXTHREADS = cfg.getint('flightobserver', 'maxthreads')
+    
     # try several times to reconnect to host
     # Win running in VMWare Server takes some time to boot itself 
     # 2007-04-04 bugfix: don't crash when connection to telnet is lost (e.g. Win auto-updates)
-    
     while True:
         while True:
             try:
@@ -260,7 +258,11 @@ def main():
                     threadcount = threading.activeCount()
                     logging.info("number of running threads: %i" %threadcount)
                     try:
-                        handler = MessageHandler()
+                        dbhost = cfg.get('db', 'host')
+                        dbname = cfg.get('db', 'database')
+                        dbuser = cfg.get('db', 'user')
+                        dbpassword = cfg.get('db', 'password')
+                        handler = MessageHandler(dbhost, dbname, dbuser, dbpassword)
                         handler.setName('#%i (born %s)' % (threadcount + 1, time.strftime("%d.%m.%Y %H:%M")))
                         handler.start()
                     except Exception, e:
