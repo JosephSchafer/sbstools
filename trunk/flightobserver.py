@@ -70,8 +70,9 @@ class MessageHandler(threading.Thread):
         # selection change message (SEL), new aircraft message (AIR), new id message (ID) transmission message (MSG)
         msgtype = parts[0] 
         
-        if msgtype == 'SEL':
-            # selection of new aircraft in Basestation GUI is irrelevant, so we ignore it!
+        if msgtype in ['SEL', 'STA', 'CLK']:
+            # irrelevant for this application, see http://www.kineticavionics.co.uk/forums/viewtopic.php?t=1959
+            # SEL: selection of new aircraft in Basestation GUI, STA: status change (green, yellow, red), CLK: double-click on an aircraft
             pass
             
         elif msgtype == 'AIR':
@@ -102,7 +103,7 @@ class MessageHandler(threading.Thread):
             fields = ['msgtype', 'transmissiontype', 'sessionid', 'aircraftid', 'hexident', 'flightid', 'datemessagegenerated', 'timemessagegenerated', 'datemessagelogged', 'timemessagelogged', 'callsign', 'altitude', 'groundspeed', 'track', 'lat', 'long', 'verticalrate', 'squawk', 'alert', 'emergency', 'spi', 'isonground']
             mapping = self._createMap(parts, fields)
             
-            # typeconversion of some fields
+            # typeconversion for selected fields
             for field in mapping.keys():
                 if field in ['groundspeed', 'lat', 'long']:
                     try:
@@ -134,9 +135,11 @@ class MessageHandler(threading.Thread):
             
             # split millisecond part from timemessagegenerated
             time_ms = int(mapping.get('timemessagegenerated').split('.')[1])
+            if transmissiontype in [2, 3, 4]:
+                logging.info('thread %s: %i item(s) in queue' %( self.getName(), queue.qsize() ) )
+            
             # transmissiontype 2 and 3 contain geographical information (lat, long)
             if transmissiontype in [2, 3]:
-                logging.info('thread: %s in action, %i item(s) in the queue' %(self.getName(), queue.qsize()))
                 logging.debug('lat: %f' %mapping.get('lat'))
                 logging.debug('long: %f' %mapping.get('long'))
                 self.collector.logFlightdata(mapping.get('flightid'), mapping.get('altitude'), mapping.get('lat'), mapping.get('long'), mapping.get('datemessagegenerated') + ' ' + mapping.get('timemessagegenerated'), time_ms, transmissiontype)
@@ -147,7 +150,7 @@ class MessageHandler(threading.Thread):
                 self.collector.logAirborneVelocityMessage(mapping.get('flightid'), mapping.get('groundspeed'), mapping.get('verticalrate'), mapping.get('track'), mapping.get('datemessagegenerated') + ' ' + mapping.get('timemessagegenerated'))
         else:
             # unknown msgtype!
-            logging.warn("unknown messagetype: %s" %str(msgtype))
+            logging.warn("unknown messagetype: (%s) %s" %( str(msgtype),msg ) )
 
 class DataCollector:
     ''' database agent '''
@@ -249,7 +252,6 @@ def main():
                     queue.put(message)
                 else:
                     pass
-                    #raise Exception("empty string read from port")
                 
                 # create the threads which are responsible for processing the message queue
                 # if a thread dies, a new one is automatically recreated
