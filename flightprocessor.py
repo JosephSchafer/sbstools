@@ -9,6 +9,7 @@ import ogr
 import time, datetime
 import MySQLdb
 import logging
+from logging import handlers
 import sys, os
 from ConfigParser import SafeConfigParser
 
@@ -153,6 +154,8 @@ class FlightAnalyzer:
         # __FIXME__: filtering should happen at flightobserver.py
         cursor = self.db.cursor()
         sql = "DELETE FROM flightdata WHERE flightid IN (SELECT id FROM flights WHERE mergestate IS NULL) AND (LONGITUDE <= 3 OR LONGITUDE >=15 OR LATITUDE <= 40 OR LATITUDE >= 50)"
+        logging.info("cleaning data ...")
+        logging.info(sql)
         cursor.execute(sql)
         cursor.close()
         
@@ -240,7 +243,6 @@ class FlightAnalyzer:
         rs = cursor.fetchall()
         for record in rs:
             flightids.append(record[0])
-        print flightids
         
         # tag the flights
         for flightid in flightids:
