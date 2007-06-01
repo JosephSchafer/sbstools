@@ -1,17 +1,15 @@
 #!/usr/bin/python
-# Applying operations to flights: 
-# - clean flightdata (keyword latitude/longitude madness)
-# - merge flights (keyword "callsign flickering")
-# - geo-analysis
+# Applying operations to flights (the following order is recommended) 
+# 1 clean flightdata (keyword latitude/longitude madness)
+# 2 merge flights (keyword "callsign flickering")
+# 3 geo-analysis
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
+# sponsored by Land Vorarlberg (http://www.vorarlberg.at)
 import ogr
 import time, datetime
 import MySQLdb
 import logging
-
-# found this very nice online tool http://www.mapshaper.org to simplify the map
-# the simplified map is publicly available 
-SHAPEFILE = 'data/vlbg_wgs84_douglas_14.shp'
+from ConfigParser import SafeConfigParser
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
@@ -22,7 +20,7 @@ class FlightMerger:
         self.hexidents = {} # hexident-to-flightid mapping, e.g. {'AE3463' : [23234, 34223, 34234]} 
         self.flightmappings = {} # mainflightid-to-mergedflightid mapping, e.g. {3234: [(342342, 'SWR343'), (234234, 'SWR5')]} 
         self.flighttimestamps = {} # flightid-to-timestamp mapping, e.g. {3234: '2007-04-23 23:23'} 
-    
+        
     def determineCallsign(self, flightid):
         ''' select the callsign which is most likely the "correct" one for this flight '''
         
@@ -32,7 +30,7 @@ class FlightMerger:
         callsigns = [callsign for flightid, callsign in mappings]
         freq = [(a, callsigns.count(a)) for a in set(callsigns)]
         
-        # sort callsign so that None is last
+        # sort callsigns so that 'None' is last
         freq.sort(lambda a, b: cmp(b[0], a[0]))
         freq.sort(lambda a, b: cmp(b[1], a[1]))
         callsign = freq[0][0]
@@ -84,7 +82,7 @@ class FlightMerger:
                 self.flightmappings[flightid] = [ (flightid, callsign) ]
                 self.flighttimestamps[flightid] = ts
                 
-        # aircraft not yet known here => completely new flight
+        # aircraft not yet known at this stage => completely new flight
         else:
             self.hexidents[hexident] = [flightid, ]
             self.flightmappings[flightid] = [ (flightid, callsign) ]
@@ -128,33 +126,29 @@ class FlightMerger:
 class FlightAnalyzer:
     ''' analyzer of flights '''
     
-    host = 'localhost'
-    database = 'flightdb'
-    user = 'flight'
-    password = 'flyaway'
-    
-    def __init__(self):
-        self.db = MySQLdb.connect(host = self.host, db = self.database, user = self.user, passwd = self.password)
+    def __init__(self, host, database, user, password):
+        self.db = MySQLdb.connect(host = host, db = database, user = user, passwd = password)
         
-        self.src = ogr.Open(SHAPEFILE)
-        self.layer = self.src.GetLayer()
-        self.feature = self.layer.GetNextFeature()
-        self.geometry = self.feature.GetGeometryRef()
-    
     def cleanData(self):
         ''' remove senseless data '''
         
         # sometimes senseless GPS-data is sent by aircrafts!
         # IMPORTANT! the range is only valid for certain locations, here: Hittisau
-        # __FIXME__: guess this filtering should happen at flightobserver.py
+        # assumption: gps coordinates with longitude not in [3, 15] or latitude not in [40, 50] are invalid
+        # __FIXME__: filtering should happen at flightobserver.py
         cursor = self.db.cursor()
         sql = "DELETE FROM flightdata WHERE flightid IN (SELECT id FROM flights WHERE mergestate IS NULL) AND (LONGITUDE <= 3 OR LONGITUDE >=15 OR LATITUDE <= 40 OR LATITUDE >= 50)"
         cursor.execute(sql)
         cursor.close()
         
-    def geoclassifyFlights(self):
+    def geoclassifyFlights(self, shapefile):
         ''' check if flight crossed a certain region '''
         
+        self.src = ogr.Open(shapefile)
+        self.layer = self.src.GetLayer()
+        self.feature = self.layer.GetNextFeature()
+        self.geometry = self.feature.GetGeometryRef()
+    
         cursor = self.db.cursor()
         # grab all flights not yet classified geographically
         # and not currently in progress
@@ -293,16 +287,17 @@ class FlightAnalyzer:
 def main():
     ''' flightprocessor main '''
     
+    cfg = SafeConfigParser()
+    cfg.read(sys.path[0] + os.sep + 'sbstools.cfg')
     logging.info("### FLIGHTPROCESSOR started")
-    
-    analyzer = FlightAnalyzer()
-    cursor = analyzer.db.cursor()
-    # remove senseless data!
+  
+    analyzer = FlightAnalyzer( cfg.get('db', 'host'), cfg.get('db', 'database'), cfg.get('db', 'user'), cfg.get('db', 'password') )
+    # 1. remove senseless data!
     analyzer.cleanData()
-    # merge flights "callsign flickering" problem
+    # 2. merge flights and solve "callsign flickering" problem
     analyzer.mergeFlights()
-    # check if flights crossed Vorarlberg
-    analyzer.geoclassifyFlights()
+    # 3. check if flights crossed area specified in shapefile
+    analyzer.geoclassifyFlights( cfg.get('flightprocessor', 'shapefile') )
     
     logging.info("### FLIGHTPROCESSOR finished")
  
