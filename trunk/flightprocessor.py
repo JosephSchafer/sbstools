@@ -12,8 +12,22 @@ import logging
 import sys, os
 from ConfigParser import SafeConfigParser
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
-
+LOGFILE = "flightprocessor.log"
+def setupLogging():
+    ''' set up the Python logging facility '''
+    
+    # the Python logging facility rocks! :)
+    # define a Handler which writes INFO messages or higher to a file which is rotated when it reaches 5MB
+    handler = handlers.RotatingFileHandler(LOGFILE, maxBytes = 5 * 1024 * 1024, backupCount=7)
+    # set a nice format
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    # tell the handler to use this format
+    handler.setFormatter(formatter)
+    # add the handler to the root logger
+    logger = logging.getLogger('')
+    logger.setLevel(logging.INFO)
+    logging.getLogger('').addHandler(handler)
+    
 class FlightMerger:
     ''' class holding info about which flights shall be merged '''
     
@@ -288,6 +302,7 @@ class FlightAnalyzer:
 def main():
     ''' flightprocessor main '''
     
+    setupLogging()
     cfg = SafeConfigParser()
     cfg.read(sys.path[0] + os.sep + 'sbstools.cfg')
     logging.info("### FLIGHTPROCESSOR started")
