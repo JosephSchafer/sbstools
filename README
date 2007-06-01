@@ -1,0 +1,12 @@
+Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
+sponsored by Land Vorarlberg (http://www.vorarlberg.at) 
+
+
+sbstools - Processing data from SBS1-Basestation
+http://code.google.com/p/sbstools/
+
+- flightobserver: daemon retrieving data from Basestation application and storing it in a database
+- flightprocessor: processing (i.e. cleaning, fixing & geoclassifying) flight data 
+- datareducer: reducing amount of flight data
+
+- testing: contains tools for creating output (e.g. kml-files) 
