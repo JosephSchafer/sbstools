@@ -4,6 +4,7 @@
 import time
 import MySQLdb
 import logging
+import sys, os
 from ConfigParser import SafeConfigParser
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -104,7 +105,9 @@ def main():
     cfg.read(sys.path[0] + os.sep + 'sbstools.cfg')
     
     reducer = FlightdataReducer( cfg.get('db', 'host'), cfg.get('db', 'database'), cfg.get('db', 'user'), cfg.get('db', 'password') )
-    reducer.setPercentage( cfg.get('flightdatareducer', 'percentage') )
+    percentage = cfg.getint('flightdatareducer', 'percentage')
+    reducer.setPercentage(percentage)
+    logging.info("%i percent of flightdata will be reduced" %percentage)
     
     cursor = reducer.db.cursor()
     # grab all flights, which:
