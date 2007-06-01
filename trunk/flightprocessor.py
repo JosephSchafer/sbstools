@@ -9,6 +9,7 @@ import ogr
 import time, datetime
 import MySQLdb
 import logging
+import sys, os
 from ConfigParser import SafeConfigParser
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
