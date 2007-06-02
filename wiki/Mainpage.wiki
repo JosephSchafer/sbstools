@@ -5,7 +5,7 @@
 *Description*
 
   * Setup of hardware (see [systemconfiguration])
-  * Software for connecting to Basestation via port and storing all relevant data in a mysql database.
+  * Software for connecting to Basestation via port and storing all relevant data in a mysql database (_flightobserver.py_)
   * Socket output format - http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=1402
   * [PerformanceOptimiziations]
   * [FlightTableIssue]
@@ -18,14 +18,14 @@ fully functional solution till April 1st, 2007 to start recording.
 
 *Description*
 
-  * Software to filter flight data stored in mysql database by geographical aspects. (GPS)
+  * Software to filter flight data stored in mysql database by geographical aspects (_flightprocesser.py_).
   * [GISSoftwareEvaluation]
   * Data reduction: remove 90% of flightdata&airbornevelocitymessage for flights not crossing Vorarlberg
   * remove senseless flightdata! (DELETE FROM flightdata WHERE LONGITUDE <= 3 OR LONGITUDE >=15 OR LATITUDE <= 40 OR LATITUDE >= 50;)
 
 *Timeframe*
 
-till April 15th?
+solution till April 15th, 2007.
 
 ==Package3==
 
@@ -43,7 +43,7 @@ till April 15th?
 
 *Timeframe*
 
-May 2007?
+May 2007
 
 ==Future==
 
