@@ -21,5 +21,7 @@ SELECT DISTINCT flightid FROM flightdata WHERE time BETWEEN '2007-04-09 00:00' A
 
 sql-statement for displaying number of overflights grouped by day
 {{{
-SELECT DAYNAME(flights.ts) AS Wochentag, DAYOFMONTH(flights.ts) AS Tag, MONTH(flights.ts) AS Monat, YEAR(flights.ts) AS Jahr, count(*) FROM flights WHERE flights.overVlbg=1 GROUP BY MONTH(flights.ts), DAYOFMONTH(flights.ts);      
+SELECT DAYNAME(flights.ts) AS Wochentag, DAYOFMONTH(flights.ts) AS Tag, MONTH(flights.ts) AS Monat, YEAR(flights.ts) AS Jahr, count(*) 
+FROM flights WHERE flights.overVlbg=1 
+GROUP BY MONTH(flights.ts), DAYOFMONTH(flights.ts);      
 }}}
