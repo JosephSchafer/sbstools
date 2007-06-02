@@ -18,3 +18,8 @@ sql-statement for finding non-existing flights (at least in the database) but wh
 {{{
 SELECT DISTINCT flightid FROM flightdata WHERE time BETWEEN '2007-04-09 00:00' AND '2007-04-10 00:00' AND flightid NOT IN (SELECT id FROM flights);
 }}}
+
+sql-statement for displaying number of overflights grouped by day
+{{{
+SELECT DAYNAME(flights.ts) AS Wochentag, DAYOFMONTH(flights.ts) AS Tag, MONTH(flights.ts) AS Monat, YEAR(flights.ts) AS Jahr, count(*) FROM flights WHERE flights.overVlbg=1 GROUP BY MONTH(flights.ts), DAYOFMONTH(flights.ts);      
+}}}
