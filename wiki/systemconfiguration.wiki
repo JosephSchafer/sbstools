@@ -11,8 +11,11 @@
 ==Linux==
   * mysqld
   
-  * flightobserver (python) - daemon reading data from Basestation's port #30003 and writing relevant info to database
-  * geofilter (python) - filtering flight data using GPS-data, running as hourly cronjob
-  * filter (python) - reduction of flight data, running as daily cronjob
-  
-  * flightreporter - flight statistics (rubyonrails, php, ...)
+  * sbstools (Python) consisting of: 
+
+       * flightobserver - daemon reading data from Basestation's port #30003 and writing relevant info to database
+
+       * flightprocessor - processsing (cleaning up, merging, geoclassify) flightdata, running as hourly cronjob
+
+       * flightdatareducer - reduction of flight data, running as daily cronjob
+ 
