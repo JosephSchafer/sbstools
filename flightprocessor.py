@@ -153,8 +153,9 @@ class FlightAnalyzer:
         # assumption: gps coordinates with longitude not in [3, 15] or latitude not in [40, 50] are invalid
         # __FIXME__: filtering should happen at flightobserver.py
         cursor = self.db.cursor()
-        sql = "DELETE FROM flightdata WHERE flightid IN (SELECT id FROM flights WHERE mergestate IS NULL) AND (LONGITUDE <= 3 OR LONGITUDE >=15 OR LATITUDE <= 40 OR LATITUDE >= 50)"
-        logging.info("cleaning data ...")
+        #sql = "DELETE FROM flightdata WHERE flightid IN (SELECT id FROM flights WHERE mergestate IS NULL) AND (LONGITUDE <= 3 OR LONGITUDE >=15 OR LATITUDE <= 40 OR LATITUDE >= 50)"
+        sql = "DELETE FROM flightdata WHERE longitude=0 AND latitude=0"
+        logging.info("cleaning data from (0,0) coordinates ...")
         logging.info(sql)
         cursor.execute(sql)
         cursor.close()
@@ -330,7 +331,7 @@ def main():
   
     analyzer = FlightAnalyzer( cfg.get('db', 'host'), cfg.get('db', 'database'), cfg.get('db', 'user'), cfg.get('db', 'password') )
     # 1. remove senseless data! this approach is obsolete!
-    # analyzer.cleanData()
+    analyzer.cleanData()
     # 2. merge flights and solve "callsign flickering" problem
     analyzer.mergeFlights()
     # 3. check if flights crossed area specified in shapefile
