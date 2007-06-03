@@ -12,7 +12,8 @@
 
 *Timeframe*
 
-fully functional solution till April 1st, 2007 to start recording.
+beta version till April 1st, 2007 to start recording.
+continuous improvements
 
 ==Package2==
 
@@ -26,7 +27,8 @@ fully functional solution till April 1st, 2007 to start recording.
 
 *Timeframe*
 
-solution till April 15th, 2007.
+beta version till April 15th, 2007.
+continuous improvements
 
 ==Package3==
 
@@ -44,7 +46,8 @@ solution till April 15th, 2007.
 
 *Timeframe*
 
-May 2007
+beta version till May 2007
+continuous improvements
 
 ==Future==
 
