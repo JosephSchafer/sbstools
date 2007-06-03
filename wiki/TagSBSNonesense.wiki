@@ -1,0 +1,12 @@
+#nonsense data has to be tagged
+
+= Introduction =
+
+Some flights send incorrect GPS-data, see: http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=3491
+The previous approach was to remove GPS data out of a certain range but this was not sufficient. 
+
+= Details =
+
+   # calculate distance between adjacent points (longitude, latitude)
+   # check for GPS coordinates out of range
+   # tag these flights (introduce new field named _gpsaccuracy_)
