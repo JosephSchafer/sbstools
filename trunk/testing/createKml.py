@@ -6,7 +6,7 @@ import MySQLdb
 import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
-overVlbg = (1,)
+overVlbg = (1,0)
 
 class HTMLCreator:
     ''' hacky thing to create html with google maps, flights and infos '''
@@ -117,7 +117,7 @@ class KMLCreator:
                 #SKIP = 30
                 #length = len(rs2)
                 #SKIP = length / 25
-                SKIP = 2#0
+                SKIP = 1#0
                 if SKIP == 0:
                     SKIP = 1
                 coordinateinfo = ""     
@@ -221,15 +221,16 @@ class KMLCreator:
                 SKIP = length / 5
                 coordinateinfo = ""     
                 logging.info(SKIP)
+		SKIP = 1
                 for data in rs2:
                     longitude= data[0]
                     latitude = data[1]
                     altitude = data[2]
                     # damn, some flights have pretty strange GPS-info! define a value range
-                    if latitude > 40 and latitude < 50 and longitude > 8 and longitude < 15: 
-                        if SKIP and c % SKIP == 0:
-                            coordinateinfo += "%f,%f,%f \n" %(longitude, latitude, altitude)
-                        c += 1
+                    #if latitude > 40 and latitude < 50 and longitude > 8 and longitude < 15: 
+                    if SKIP and c % SKIP == 0:
+                        coordinateinfo += "%f,%f,%f \n" %(longitude, latitude, altitude)
+                    c += 1
                 cursor2.close()
                 if length > 50:
                     placemark += """<Placemark>

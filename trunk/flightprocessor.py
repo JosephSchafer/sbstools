@@ -265,6 +265,25 @@ class FlightAnalyzer:
     
         # create linestring from flight route and check if it intersects
         linestring = self.createFlightLine(flightid)
+        
+        # calculate distance between adjacent points
+        distancetable = [0]
+        for i in range( linestring.GetPointCount() ):
+            point =  ogr.Geometry(ogr.wkbPoint)
+            point.SetPoint_2D(0, linestring.GetX(i), linestring.GetY(i))
+            try:
+                refpoint
+            except:
+                refpoint = point
+            
+            distance = refpoint.Distance(point)
+            distancetable.append(distance)
+            print distance
+            refpoint = point
+        # log largest distance
+        distancetable.sort()
+        logging.info("largest distance for flight %i: %f" %(flightid, distancetable[-1]))
+        
         isIntersecting = self.geometry.Intersect(linestring)
         
         logging.info("flight #%i intersecting?: %i" %(flightid, isIntersecting))
@@ -310,8 +329,8 @@ def main():
     logging.info("### FLIGHTPROCESSOR started")
   
     analyzer = FlightAnalyzer( cfg.get('db', 'host'), cfg.get('db', 'database'), cfg.get('db', 'user'), cfg.get('db', 'password') )
-    # 1. remove senseless data!
-    analyzer.cleanData()
+    # 1. remove senseless data! this approach is obsolete!
+    # analyzer.cleanData()
     # 2. merge flights and solve "callsign flickering" problem
     analyzer.mergeFlights()
     # 3. check if flights crossed area specified in shapefile
