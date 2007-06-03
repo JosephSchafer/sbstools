@@ -21,7 +21,8 @@ fully functional solution till April 1st, 2007 to start recording.
   * Software to filter flight data stored in mysql database by geographical aspects (_flightprocesser.py_).
   * [GISSoftwareEvaluation]
   * Data reduction: remove 90% of flightdata&airbornevelocitymessage for flights not crossing Vorarlberg (_flightdatareducer.py_)
-  * remove senseless flightdata! (DELETE FROM flightdata WHERE LONGITUDE <= 3 OR LONGITUDE >=15 OR LATITUDE <= 40 OR LATITUDE >= 50;)
+  * ~~remove senseless flightdata! (DELETE FROM flightdata WHERE LONGITUDE <= 3 OR LONGITUDE >=15 OR LATITUDE <= 40 OR LATITUDE >= 50;)~~
+  * [TagSBSNonesense]: do not remove obviously incorrect data but tag these flights
 
 *Timeframe*
 
