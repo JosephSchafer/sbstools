@@ -56,7 +56,7 @@ class FlightdataReducer:
             self.db.rollback()
             logging.error("rollback")
         else:
-            self.db.commit()
+            self.db.rollback()#self.db.commit()
         cursor.close()
     
     def getRemovableIds(self, flightid, table='flightdata'):
@@ -122,8 +122,16 @@ def main():
     for record in rs:
         flightid = record[0]
         reducer.reduceFlight(flightid)
-
     cursor.close() 
+    
+    # after freeing so much data, optimize table reduces disk space usage
+   # http://dev.mysql.com/doc/refman/5.1/en/optimize-table.html 
+    logging.info("optimizing tables ...")
+    cursor = reducer.db.cursor()
+    sql = "OPTIMIZE TABLE flightdata, airbornevelocitymessage"
+    cursor.execute(sql)
+    cursor.close()
+    
     logging.info("### REDUCER finished")
  
 if __name__ == '__main__':
