@@ -37,6 +37,8 @@ class DistanceCalc:
         theta = lon1 - lon2
         dist = math.sin(lat1) * math.sin(lat2) \
              + math.cos(lat1) * math.cos(lat2) * math.cos(theta)
+        if dist >= 1:
+            dist = 1
         dist = math.acos(dist)
         dist = self.rad2deg(dist)
         meters = dist * 60 * 1852
@@ -81,6 +83,7 @@ class DistanceChecker:
             points.append( (x, y, milliseconds) )
         cursor.close()    
     
+        cumulateddistance = 0
         p = 0
         time = 0
         for x, y, milliseconds in points:
@@ -92,6 +95,7 @@ class DistanceChecker:
                 p = p2
                 time = time2
             distance = distcalc.distance( p.GetX(), p.GetY(), p2.GetX(), p2.GetY() )
+            cumulateddistance += distance
             timediff = time2 - time
             try:
                 velocity = (3600 * 1000 / timediff) * distance / 1000
@@ -104,7 +108,10 @@ class DistanceChecker:
             p = p2
             time = time2
             #logging.info( p.GetSpatialReference() )
-            
+        timediff = points[-1][2] - points[0][2]
+        velocity = (3600 * 1000 / timediff) * cumulateddistance / 1000
+        logging.info("average velocity: %f kmph" % velocity)
+        
 def main():
     ''' distance checker '''
     
@@ -120,6 +127,7 @@ def main():
     distancechecker = DistanceChecker(dbhost, dbname, dbuser, dbpassword)
     #distancechecker.checkAllFlights()
     distancechecker.checkFlight(101545)
+    distancechecker.checkFlight(7409)
     
     logging.info("### distance checker finished")
  
