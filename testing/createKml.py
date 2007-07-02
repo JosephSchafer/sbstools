@@ -32,7 +32,7 @@ class HTMLCreator:
   <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
     <title>Google Maps Flightradar</title>
-    <script src="http://maps.google.com/maps?file=api&amp;v=2.x&amp;key=ABQIAAAA8E-yr4f8IpI_aBX8PhYOVxRuNWC2ipkI6dR5VCD3IuAM1IlVdBQcfokuIrZBiebzigmQ9wXbvXHGjQ"
+    <script src="http://maps.google.com/maps?file=api&amp;v=2.81&amp;key=ABQIAAAA8E-yr4f8IpI_aBX8PhYOVxRuNWC2ipkI6dR5VCD3IuAM1IlVdBQcfokuIrZBiebzigmQ9wXbvXHGjQ"
       type="text/javascript"></script>
     <script type="text/javascript">
 
