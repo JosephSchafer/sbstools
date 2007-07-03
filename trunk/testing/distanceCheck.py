@@ -103,6 +103,8 @@ class DistanceChecker:
             pnt2.SetPoint_2D(0, x, y)
             if pnt == None:
                 pnt = pnt2
+            if stepdistance == 0:
+                startpnt = pnt
             # calculate distance between point1 and point2
             distance = distcalc.distance( pnt.GetX(), pnt.GetY(), pnt2.GetX(), pnt2.GetY() )
             totaldistance += distance
@@ -119,7 +121,7 @@ class DistanceChecker:
                 # gotta convert distance into a readable format, e.g. km
                 if distance > 0:
                     if velocity:
-                        logging.info( "%f km between (%f, %f) and (%f, %f)" %(stepdistance/1000, p.GetX(), p.GetY(), p2.GetX(), p2.GetY()) )
+                        logging.info( "%f km between (%f, %f) and (%f, %f)" %(stepdistance/1000, startpnt.GetX(), startpnt.GetY(), pnt2.GetX(), pnt2.GetY()) )
                         logging.info("\t%d %d" %(starttime, endtime) )
                         logging.info( "\t%d ms between these = %f kmph" % (timediff, velocity))
                     velocities.append( velocity )
