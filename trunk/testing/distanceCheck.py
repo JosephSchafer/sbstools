@@ -96,7 +96,7 @@ class DistanceChecker:
         for x, y, ms in points:
             if stepdistance == 0:
                 starttime = ms
-                endtime = ms
+            endtime = ms
  
             pnt2 = ogr.Geometry(ogr.wkbPoint)
             pnt2.AssignSpatialReference(spatref)
@@ -136,7 +136,7 @@ class DistanceChecker:
         avgvelocity = (3600 * 1000 / timediff) * totaldistance / 1000
         if velocities[-1]:
             logging.info("\taverage velocity: %f kmph" % avgvelocity)
-            logging.info("\tmaximum velocity: %f kmph" % velocities[-1])
+            logging.info("\tmaximum partial velocity: %f kmph" % velocities[-1])
         
 def main():
     ''' distance checker '''
