@@ -119,9 +119,10 @@ class DistanceChecker:
                 	velocity = -1
             	# gotta convert distance into a readable format, e.g. km
             	if distance > 0:
-                	logging.info( "%f km between (%f, %f) and (%f, %f)" %(stepdistance/1000, p.GetX(), p.GetY(), p2.GetX(), p2.GetY()) )
-			logging.info("\t%d %d" %(starttime, endtime) )
-                	logging.info( "\t%d ms between these = %f kmph" % (timediff, velocity))
+			if velocity > 1500:
+                		logging.info( "%f km between (%f, %f) and (%f, %f)" %(stepdistance/1000, p.GetX(), p.GetY(), p2.GetX(), p2.GetY()) )
+				logging.info("\t%d %d" %(starttime, endtime) )
+                		logging.info( "\t%d ms between these = %f kmph" % (timediff, velocity))
                 	velocities.append( velocity )
 		stepdistance = 0
 
@@ -131,8 +132,9 @@ class DistanceChecker:
         timediff = points[-1][2] - points[0][2]
         velocities.sort()
         velocity = (3600 * 1000 / timediff) * cumulateddistance / 1000
-        logging.info("\taverage velocity: %f kmph" % velocity)
-        logging.info("\tmaximum velocity: %f kmph" % velocities[-1])
+        if velocities[-1] > 1500:
+		logging.info("\taverage velocity: %f kmph" % velocity)
+        	logging.info("\tmaximum velocity: %f kmph" % velocities[-1])
         
 def main():
     ''' distance checker '''
@@ -148,9 +150,10 @@ def main():
     
     distancechecker = DistanceChecker(dbhost, dbname, dbuser, dbpassword)
     #distancechecker.checkAllFlights()
-    distancechecker.checkFlight(101545)
-    distancechecker.checkFlight(7409)
-    distancechecker.checkFlight(4919) 
+    distancechecker.checkFlight(4740)
+    #distancechecker.checkFlight(101545)
+    #distancechecker.checkFlight(7409)
+    #distancechecker.checkFlight(4919) 
     logging.info("### distance checker finished")
  
 if __name__ == '__main__':
