@@ -14,3 +14,5 @@ My first approach was to remove GPS data out of a certain range but this was not
 = Comments =
 
 The credo is: *Tag but do not remove incorrect data*
+
+ * At least the first flightdata entry seems to be (0, 0)!
