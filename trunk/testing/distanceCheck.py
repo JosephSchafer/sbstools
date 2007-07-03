@@ -54,7 +54,7 @@ class DistanceChecker:
         ''' check all flights '''
         
         cursor = self.db.cursor()
-        sql = "SELECT id FROM flights WHERE overvlbg=1"
+        sql = "SELECT id FROM flights WHERE overvlbg=1 and ts > '2007-04-01 00:00'"
         cursor.execute(sql)
         rs = cursor.fetchall()
         for record in rs:
@@ -72,49 +72,67 @@ class DistanceChecker:
         logging.info("checking flight #%i" %flightid)
         points = []
         cursor = self.db.cursor()
-        sql = "SELECT latitude, longitude, UNIX_TIMESTAMP(time)*1000 + time_ms AS milliseconds FROM flightdata WHERE flightid=%i" %flightid
+        sql = "SELECT latitude, longitude, UNIX_TIMESTAMP(time)*1000 + time_ms AS timestamp_ms FROM flightdata WHERE flightid=%i" %flightid
         cursor.execute(sql)
         rs = cursor.fetchall()
         # add all relevant flightdata to list!
         for record in rs:
             x = record[0]
             y = record[1]
-            milliseconds = long(record[2])
-            points.append( (x, y, milliseconds) )
+            timestamp_ms = long(record[2])
+	    # ignore all (0, 0)-infos 
+	    if x != 0 and y != 0:
+            	points.append( (x, y, timestamp_ms) )
         cursor.close()    
     
         cumulateddistance = 0
         velocities = []
         p = 0
         time = 0
-        for x, y, milliseconds in points:
+
+	# accumulated distance between adjacent points	
+	stepdistance = 0
+	THRESHOLD = 5*1000   #5 kilometres 
+        for x, y, ms in points:
+            if stepdistance == 0:
+		starttime = ms
+	    endtime = ms
+ 
             p2 = ogr.Geometry(ogr.wkbPoint)
             p2.AssignSpatialReference(spatref)
             p2.SetPoint_2D(0, x, y)
-            time2 = milliseconds
+            time2 = ms 
             if p == 0:
                 p = p2
                 time = time2
             distance = distcalc.distance( p.GetX(), p.GetY(), p2.GetX(), p2.GetY() )
             cumulateddistance += distance
-            timediff = time2 - time
-            try:
-                velocity = (3600 * 1000 / timediff) * distance / 1000
-            except:
-                velocity = -1
-            # gotta convert distance into a readable format, e.g. km
-            velocities.append( velocity )
-            if distance > 0:
-                logging.debug( "\t%f between (%f, %f) and (%f, %f)" %(distance, p.GetX(), p.GetY(), p2.GetX(), p2.GetY()) )
-                logging.debug( "\t%f milliseconds between these = %f kmph" % (timediff, velocity))
+            stepdistance += distance
+
+            # make sure that velocity is also calculated if the threshold cannot be reached
+            # due to end of list
+            if stepdistance > THRESHOLD or points.index( (x, y, ms) ) == len(points) - 1:
+            	timediff = endtime - starttime
+            	try:
+                	velocity = (3600 * 1000 / timediff) * stepdistance / 1000
+            	except:
+                	velocity = -1
+            	# gotta convert distance into a readable format, e.g. km
+            	if distance > 0:
+                	logging.info( "%f km between (%f, %f) and (%f, %f)" %(stepdistance/1000, p.GetX(), p.GetY(), p2.GetX(), p2.GetY()) )
+			logging.info("\t%d %d" %(starttime, endtime) )
+                	logging.info( "\t%d ms between these = %f kmph" % (timediff, velocity))
+                	velocities.append( velocity )
+		stepdistance = 0
+
             p = p2
             time = time2
             #logging.info( p.GetSpatialReference() )
         timediff = points[-1][2] - points[0][2]
         velocities.sort()
         velocity = (3600 * 1000 / timediff) * cumulateddistance / 1000
-        logging.info("%d\taverage velocity: %f kmph" % (flightid, velocity) )
-        logging.info("\tmaximum velocity: %f kmph" % velocites[-1])
+        logging.info("\taverage velocity: %f kmph" % velocity)
+        logging.info("\tmaximum velocity: %f kmph" % velocities[-1])
         
 def main():
     ''' distance checker '''
@@ -132,7 +150,7 @@ def main():
     #distancechecker.checkAllFlights()
     distancechecker.checkFlight(101545)
     distancechecker.checkFlight(7409)
-    
+    distancechecker.checkFlight(4919) 
     logging.info("### distance checker finished")
  
 if __name__ == '__main__':
