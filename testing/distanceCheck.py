@@ -80,61 +80,61 @@ class DistanceChecker:
             x = record[0]
             y = record[1]
             timestamp_ms = long(record[2])
-	    # ignore all (0, 0)-infos 
-	    if x != 0 and y != 0:
-            	points.append( (x, y, timestamp_ms) )
+            # ignore all (0, 0)-infos 
+            if x != 0 and y != 0:
+                points.append( (x, y, timestamp_ms) )
         cursor.close()    
     
-        cumulateddistance = 0
+        # distance between very first and last point
+        totaldistance = 0
+        # distance between first point and last point of partial line
+        stepdistance = 0
+    
         velocities = []
-        p = 0
-        time = 0
-
-	# accumulated distance between adjacent points	
-	stepdistance = 0
-	THRESHOLD = 5*1000   #5 kilometres 
+        pnt = None
+        THRESHOLD = 5*1000   #5 kilometres 
         for x, y, ms in points:
             if stepdistance == 0:
-		starttime = ms
-	    endtime = ms
+                starttime = ms
+                endtime = ms
  
-            p2 = ogr.Geometry(ogr.wkbPoint)
-            p2.AssignSpatialReference(spatref)
-            p2.SetPoint_2D(0, x, y)
-            time2 = ms 
-            if p == 0:
-                p = p2
-                time = time2
-            distance = distcalc.distance( p.GetX(), p.GetY(), p2.GetX(), p2.GetY() )
-            cumulateddistance += distance
+            pnt2 = ogr.Geometry(ogr.wkbPoint)
+            pnt2.AssignSpatialReference(spatref)
+            pnt2.SetPoint_2D(0, x, y)
+            if pnt == None:
+                pnt = pnt2
+            # calculate distance between point1 and point2
+            distance = distcalc.distance( pnt.GetX(), pnt.GetY(), pnt2.GetX(), pnt2.GetY() )
+            totaldistance += distance
             stepdistance += distance
-
+            
             # make sure that velocity is also calculated if the threshold cannot be reached
             # due to end of list
             if stepdistance > THRESHOLD or points.index( (x, y, ms) ) == len(points) - 1:
             	timediff = endtime - starttime
             	try:
-                	velocity = (3600 * 1000 / timediff) * stepdistance / 1000
-            	except:
+                    velocity = (3600 * 1000 / timediff) * stepdistance / 1000
+                except:
                 	velocity = -1
-            	# gotta convert distance into a readable format, e.g. km
-            	if distance > 0:
-			if velocity > 1500:
-                		logging.info( "%f km between (%f, %f) and (%f, %f)" %(stepdistance/1000, p.GetX(), p.GetY(), p2.GetX(), p2.GetY()) )
-				logging.info("\t%d %d" %(starttime, endtime) )
-                		logging.info( "\t%d ms between these = %f kmph" % (timediff, velocity))
-                	velocities.append( velocity )
-		stepdistance = 0
-
-            p = p2
-            time = time2
-            #logging.info( p.GetSpatialReference() )
+                # gotta convert distance into a readable format, e.g. km
+                if distance > 0:
+                    if velocity:
+                        logging.info( "%f km between (%f, %f) and (%f, %f)" %(stepdistance/1000, p.GetX(), p.GetY(), p2.GetX(), p2.GetY()) )
+                        logging.info("\t%d %d" %(starttime, endtime) )
+                        logging.info( "\t%d ms between these = %f kmph" % (timediff, velocity))
+                    velocities.append( velocity )
+                stepdistance = 0
+            # pnt2 becomes pnt1 for the next round
+            pnt = pnt2
+        
+        # calculate timediff between very first and very last point
         timediff = points[-1][2] - points[0][2]
+        # sort velocitys of partial lines
         velocities.sort()
-        velocity = (3600 * 1000 / timediff) * cumulateddistance / 1000
-        if velocities[-1] > 1500:
-		logging.info("\taverage velocity: %f kmph" % velocity)
-        	logging.info("\tmaximum velocity: %f kmph" % velocities[-1])
+        avgvelocity = (3600 * 1000 / timediff) * totaldistance / 1000
+        if velocities[-1]:
+            logging.info("\taverage velocity: %f kmph" % avgvelocity)
+            logging.info("\tmaximum velocity: %f kmph" % velocities[-1])
         
 def main():
     ''' distance checker '''
