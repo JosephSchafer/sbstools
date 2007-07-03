@@ -10,6 +10,9 @@ My first approach was to remove GPS data out of a certain range but this was not
    # calculate distance between adjacent points (longitude, latitude) [http://mathforum.org/library/drmath/view/55417.html]
    # check for GPS coordinates out of range
    # tag these flights (introduce new field named _gpsaccuracy_)
+     # 1 perfect
+     # 3 should be ok
+     # 5 inaccurate
 
 = Comments =
 
