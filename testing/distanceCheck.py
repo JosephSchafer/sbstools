@@ -10,6 +10,9 @@ import math
 from ConfigParser import SafeConfigParser
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+verbose = 0
+MAXSPEED1 = 1500
+MAXSPEED2 = 2500
 
 class DistanceCalc:
     # based on code from by Aapo Rista (http://positio.rista.net/en/pys60gps/)
@@ -73,6 +76,7 @@ class DistanceChecker:
         points = []
         cursor = self.db.cursor()
         sql = "SELECT latitude, longitude, UNIX_TIMESTAMP(time)*1000 + time_ms AS timestamp_ms FROM flightdata WHERE flightid=%i" %flightid
+        #ORDER BY timestamp_ms ASC"  
         cursor.execute(sql)
         rs = cursor.fetchall()
         # add all relevant flightdata to list!
@@ -86,15 +90,21 @@ class DistanceChecker:
         cursor.close()    
     
         # distance between very first and last point
-        totaldistance = 0
+        totaldistance = 0.0
         # distance between first point and last point of partial line
         stepdistance = 0
-    
+        c = 0 
+        t = 0  
+ 
         velocities = []
         pnt = None
         THRESHOLD = 5*1000   #5 kilometres 
         for x, y, ms in points:
-            if stepdistance == 0:
+            try:
+                starttime
+                if stepdistance == 0:
+                    starttime = endtime 
+            except:
                 starttime = ms
             endtime = ms
  
@@ -115,28 +125,34 @@ class DistanceChecker:
             if stepdistance > THRESHOLD or points.index( (x, y, ms) ) == len(points) - 1:
             	timediff = endtime - starttime
             	try:
-                    velocity = (3600 * 1000 / timediff) * stepdistance / 1000
+                    velocity = (3600.0 * 1000 / timediff) * stepdistance / 1000.0
                 except:
                 	velocity = -1
                 # gotta convert distance into a readable format, e.g. km
                 if distance > 0:
-                    if velocity:
+                    if verbose:
                         logging.info( "%f km between (%f, %f) and (%f, %f)" %(stepdistance/1000, startpnt.GetX(), startpnt.GetY(), pnt2.GetX(), pnt2.GetY()) )
                         logging.info("\t%d %d" %(starttime, endtime) )
                         logging.info( "\t%d ms between these = %f kmph" % (timediff, velocity))
                     velocities.append( velocity )
+                c += stepdistance
+                t += timediff
                 stepdistance = 0
             # pnt2 becomes pnt1 for the next round
             pnt = pnt2
         
         # calculate timediff between very first and very last point
+        if len(points) < 2 or not len(velocities):
+            return 
         timediff = points[-1][2] - points[0][2]
         # sort velocitys of partial lines
         velocities.sort()
-        avgvelocity = (3600 * 1000 / timediff) * totaldistance / 1000
-        if velocities[-1]:
-            logging.info("\taverage velocity: %f kmph" % avgvelocity)
+        avgvelocity = (3600.0 * 1000 / timediff) * totaldistance / 1000.0
+        if velocities[-1] > MAXSPEED1 or avgvelocity > MAXSPEED1:
+            logging.info("\taverage velocity: %f kmph (%f, %f)" % (avgvelocity, totaldistance, timediff))
             logging.info("\tmaximum partial velocity: %f kmph" % velocities[-1])
+            logging.info("\tstep distance: %f km" % c)
+            logging.info("\ttime diff: %f ms" % t)
         
 def main():
     ''' distance checker '''
@@ -151,11 +167,14 @@ def main():
     dbpassword = cfg.get('db', 'password') 
     
     distancechecker = DistanceChecker(dbhost, dbname, dbuser, dbpassword)
-    #distancechecker.checkAllFlights()
-    distancechecker.checkFlight(4740)
+    distancechecker.checkAllFlights()
+    #distancechecker.checkFlight(4788)
+    #distancechecker.checkFlight(4740)
     #distancechecker.checkFlight(101545)
     #distancechecker.checkFlight(7409)
     #distancechecker.checkFlight(4919) 
+    # zig-zag flight
+    #distancechecker.checkFlight(127230) 
     logging.info("### distance checker finished")
  
 if __name__ == '__main__':
