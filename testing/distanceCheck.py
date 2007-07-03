@@ -84,6 +84,7 @@ class DistanceChecker:
         cursor.close()    
     
         cumulateddistance = 0
+        velocities = []
         p = 0
         time = 0
         for x, y, milliseconds in points:
@@ -102,15 +103,18 @@ class DistanceChecker:
             except:
                 velocity = -1
             # gotta convert distance into a readable format, e.g. km
+            velocities.append( velocity )
             if distance > 0:
-                logging.info( "\t%f between (%f, %f) and (%f, %f)" %(distance, p.GetX(), p.GetY(), p2.GetX(), p2.GetY()) )
-                logging.info( "\t%f milliseconds between these = %f kmph" % (timediff, velocity))
+                logging.debug( "\t%f between (%f, %f) and (%f, %f)" %(distance, p.GetX(), p.GetY(), p2.GetX(), p2.GetY()) )
+                logging.debug( "\t%f milliseconds between these = %f kmph" % (timediff, velocity))
             p = p2
             time = time2
             #logging.info( p.GetSpatialReference() )
         timediff = points[-1][2] - points[0][2]
+        velocities.sort()
         velocity = (3600 * 1000 / timediff) * cumulateddistance / 1000
-        logging.info("average velocity: %f kmph" % velocity)
+        logging.info("%d\taverage velocity: %f kmph" % (flightid, velocity) )
+        logging.info("\tmaximum velocity: %f kmph" % velocites[-1])
         
 def main():
     ''' distance checker '''
