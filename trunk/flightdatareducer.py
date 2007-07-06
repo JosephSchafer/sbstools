@@ -32,23 +32,24 @@ class FlightdataReducer:
         flightdataids  = self.getRemovableIds(flightid, 'flightdata')
         airbornevelocityids = self.getRemovableIds(flightid, 'airbornevelocitymessage')
         
+        # state 0 => not reduced
         # state 1 => reduced
-        state = 1
+        state = 0
         try:
             # begin transaction
-            # don't care about performance for now: execute individual sql-statements
-            # __FIXME__: DELETE FROM flightdata WHERE id IN (x1, x2, x3, ...xn)
             if len(flightdataids):
                 idlist = ",".join([str(id) for id in flightdataids])
                 sql = "DELETE FROM flightdata WHERE id IN (%s)" %idlist
                 logging.debug(sql)
                 cursor.execute(sql)
+                state = 1
             
             if len(airbornevelocityids):
                 idlist = ",".join([str(id) for id in airbornevelocityids])
                 sql = "DELETE FROM airbornevelocitymessage WHERE id IN (%s)" %idlist
                 logging.debug(sql)
                 cursor.execute(sql)
+                state = 1
             
             sql = "UPDATE flights SET state=%i WHERE id=%i" %(state, flightid)
             logging.debug(sql)
