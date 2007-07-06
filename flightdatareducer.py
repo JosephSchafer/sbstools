@@ -38,12 +38,15 @@ class FlightdataReducer:
             # begin transaction
             # don't care about performance for now: execute individual sql-statements
             # __FIXME__: DELETE FROM flightdata WHERE id IN (x1, x2, x3, ...xn)
-            for id in flightdataids:
-                sql = "DELETE FROM flightdata WHERE id=%i" %id
+            if len(flightdataids):
+                idlist = ",".join([str(id) for id in flightdataids])
+                sql = "DELETE FROM flightdata WHERE id IN (%s)" %idlist
                 logging.debug(sql)
                 cursor.execute(sql)
-            for id in airbornevelocityids:
-                sql = "DELETE FROM airbornevelocitymessage WHERE id=%i" %id
+            
+            if len(flightdataids):
+                idlist = ",".join([str(id) for id in flightdataids])
+                sql = "DELETE FROM airbornevelocitymessage WHERE id IN (%s)" %idlist
                 logging.debug(sql)
                 cursor.execute(sql)
             
@@ -51,10 +54,10 @@ class FlightdataReducer:
             logging.debug(sql)
             cursor.execute(sql)
             
-        except:
+        except Exception, e:
             # on error rollback the complete transaction
             self.db.rollback()
-            logging.error("rollback")
+            logging.error("rollback" + str(e))
         else:
             self.db.commit()
         cursor.close()
@@ -92,15 +95,14 @@ class FlightdataReducer:
             
         # nice text output
         logging.info("flight #%i (%s)" %(flightid, table) )
-        for id in ids:
-            if id in dispensableids:
-                logging.info("\t|-%i REMOVE!" %id)
-            else:
-                logging.info("\t|-%i KEEP!" %id)
-        logging.info("\t-------------------------")
-        logging.info("%i entries of %s kept" %(len(ids) - len(dispensableids), table))
-        logging.info("%i entries of %s removed" %(len(dispensableids), table))
-        logging.info("\t=========================")
+        #for id in ids:
+            #if id in dispensableids:
+            #    logging.info("\t|-%i REMOVE!" %id)
+            #else:
+            #    logging.info("\t|-%i KEEP!" %id)
+        logging.info("\t%i entries of %s kept" %(len(ids) - len(dispensableids), table))
+        logging.info("\t%i entries of %s removed" %(len(dispensableids), table))
+        logging.info("=========================")
         return dispensableids
     
 def main():
