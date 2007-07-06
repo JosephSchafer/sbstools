@@ -74,7 +74,7 @@ CREATE TABLE `flights` (
   `ts` timestamp NOT NULL default CURRENT_TIMESTAMP,
   `state` tinyint(3) unsigned default NULL,
   `mergestate` tinyint(3) unsigned default NULL,
-  `gpsaccuracy` tinyint(1) unsigned default NULL,
+  `gpsaccuracy` tinyint(1) default NULL,
   PRIMARY KEY  (`id`),
   KEY `aircraftid` (`aircraftid`),
   KEY `overvlbg` (`overvlbg`),
