@@ -56,7 +56,7 @@ class FlightdataReducer:
             self.db.rollback()
             logging.error("rollback")
         else:
-            self.db.rollback()#self.db.commit()
+            self.db.commit()
         cursor.close()
     
     def getRemovableIds(self, flightid, table='flightdata'):
@@ -73,8 +73,8 @@ class FlightdataReducer:
             ids.append(id)
         
         # __IDEA__: a better way of reducing the dataflood would be to
-        # consider the timestamp of the entries 
-        # loop over all ids and select those to delete
+        # consider the distance between two entries (via gps lat/long info)
+        # loop over all ids and collect those to be deleted
         step = 100 / self.percentage
         dispensableids = []
         
@@ -86,6 +86,10 @@ class FlightdataReducer:
             dispensableids.remove( ids[-1] )
         cursor.close()
       
+        # make sure that at least two entries are kept
+        if len(ids) - len(dispensableids) < 2:
+            dispensableids = []
+            
         # nice text output
         logging.info("flight #%i (%s)" %(flightid, table) )
         for id in ids:
@@ -107,14 +111,15 @@ def main():
     reducer = FlightdataReducer( cfg.get('db', 'host'), cfg.get('db', 'database'), cfg.get('db', 'user'), cfg.get('db', 'password') )
     percentage = cfg.getint('flightdatareducer', 'percentage')
     reducer.setPercentage(percentage)
-    logging.info("%i percent of flightdata will be reduced" %percentage)
+    logging.info("%i percent of flightdata will be kept" %percentage)
     
     cursor = reducer.db.cursor()
     # grab all flights, which:
     # - are not yet reduced (state IS NULL)
     # - did _not_ cross Vorarlberg (overVlbg=0)
     # - where the callsign flickering problem was solved (mergestate IS NOT NULL)
-    sql = "SELECT id FROM flights WHERE state IS NULL AND overVlbg=0 AND mergestate IS NOT NULL"
+    # - where the gpsaccuracy-check was already completed
+    sql = "SELECT id FROM flights WHERE state IS NULL AND overVlbg=0 AND mergestate IS NOT NULL AND gpsaccuracy IS NOT NULL"
     cursor.execute(sql)
     rs = cursor.fetchall()
     
@@ -125,7 +130,7 @@ def main():
     cursor.close() 
     
     # after freeing so much data, optimize table reduces disk space usage
-   # http://dev.mysql.com/doc/refman/5.1/en/optimize-table.html 
+    # http://dev.mysql.com/doc/refman/5.1/en/optimize-table.html 
     logging.info("optimizing tables ...")
     cursor = reducer.db.cursor()
     sql = "OPTIMIZE TABLE flightdata, airbornevelocitymessage"
