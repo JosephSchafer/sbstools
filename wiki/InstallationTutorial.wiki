@@ -26,3 +26,5 @@
 
   * geometry.Intersects hangs sometimes :(
   * geos 2.2.3 [http://geos.refractions.net geos]
+  * gdal 1.3.2 [http://www.gdal.org gdal]
+  * Deinstalled pre-installed gdal, geos-versions!
