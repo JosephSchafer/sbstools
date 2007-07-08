@@ -21,3 +21,8 @@
 
   * Install Kinetics-software
   * Download FTD2XX.dll http://www.sidena.com/En_download.htm and install it.
+
+=Update=
+
+  * geometry.Intersects hangs sometimes :(
+  * geos 2.2.3 [http://geos.refractions.net geos]
