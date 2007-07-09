@@ -106,7 +106,7 @@ class KMLCreator:
                 ts = record[3]
           
                 logging.log(logging.INFO, flightid)
-                sql = "SELECT longitude, latitude, altitude, time FROM flightdata WHERE flightid=%i" %flightid
+                sql = "SELECT longitude, latitude, altitude, time FROM flightdata WHERE flightid=%i AND longitude != 0 AND latitude != 0" %flightid
                 logging.info(sql)
                 cursor2 = self.db.cursor()
                 cursor2.execute(sql)
@@ -209,7 +209,7 @@ class KMLCreator:
             for record in rs:
                 flightid = record[0]
                 logging.log(logging.INFO, flightid)
-                sql = "SELECT longitude, latitude, altitude FROM flightdata WHERE flightid=%i" %flightid
+                sql = "SELECT longitude, latitude, altitude FROM flightdata WHERE flightid=%i AND longitude != 0 AND latitude != 0" %flightid
                 logging.info(sql)
                 cursor2 = self.db.cursor()
                 cursor2.execute(sql)
