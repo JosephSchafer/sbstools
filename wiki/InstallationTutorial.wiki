@@ -5,7 +5,7 @@
   * Setup of [http://www.howtoforge.com/ubuntu_vmware_server VMWare-Server]
   * Configuration of VMWare-Server:
     * auto-mount usb device [http://www.vmware.com/community/thread.jspa?messageID=489640]
-    * [Windows2000Professional.vmx vmware.vmx]
+    * [vmware.vmx]
   * Manual download, compilation and installation of [http://www.gdal.org gdal] (version 1.3.2) 
 
   {{{
