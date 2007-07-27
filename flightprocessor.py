@@ -1,10 +1,11 @@
 #!/usr/bin/python
-# Applying operations to flights (the following order is recommended) 
-# 1 clean flightdata (keyword latitude/longitude madness)
-# 2 merge flights (keyword "callsign flickering")
-# 3 geo-analysis
+# Applying operations to flights (the order is important!) 
+#   1 merge flights (keyword "callsign flickering")
+#   2 determine accuracy of gps-info
+#   3 geo-analysis
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
 # sponsored by Land Vorarlberg (http://www.vorarlberg.at)
+
 import ogr
 import time, datetime
 import MySQLdb
@@ -12,12 +13,12 @@ import logging
 from logging import handlers
 import sys, os
 from ConfigParser import SafeConfigParser
+import gpschecker
 
 LOGFILE = "flightprocessor.log"
 def setupLogging():
     ''' set up the Python logging facility '''
     
-    # the Python logging facility rocks! :)
     # define a Handler which writes INFO messages or higher to a file which is rotated when it reaches 5MB
     handler = handlers.RotatingFileHandler(LOGFILE, maxBytes = 5 * 1024 * 1024, backupCount=7)
     # set a nice format
@@ -152,13 +153,14 @@ class FlightAnalyzer:
         # IMPORTANT! the range is only valid for certain locations, here: Hittisau
         # assumption: gps coordinates with longitude not in [3, 15] or latitude not in [40, 50] are invalid
         # __FIXME__: filtering should happen at flightobserver.py
-        cursor = self.db.cursor()
+        #cursor = self.db.cursor()
         #sql = "DELETE FROM flightdata WHERE flightid IN (SELECT id FROM flights WHERE mergestate IS NULL) AND (LONGITUDE <= 3 OR LONGITUDE >=15 OR LATITUDE <= 40 OR LATITUDE >= 50)"
-        sql = "DELETE FROM flightdata WHERE longitude=0 AND latitude=0"
-        logging.info("cleaning data from (0,0) coordinates ...")
-        logging.info(sql)
-        cursor.execute(sql)
-        cursor.close()
+        #sql = "DELETE FROM flightdata WHERE longitude=0 AND latitude=0"
+        #logging.info("cleaning data from (0,0) coordinates ...")
+        #logging.info(sql)
+        #cursor.execute(sql)
+        #cursor.close()
+        pass
         
     def geoclassifyFlights(self, shapefile):
         ''' check if flight crossed a certain region '''
@@ -187,11 +189,10 @@ class FlightAnalyzer:
     def mergeFlights(self):
         ''' fix callsign flickering troubles '''
         # see forum posting: http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=3782
-        
-        # mergestate:
-        # NULL ... unprocessed
-        # 0 ... not merged
-        # 1 ... merged
+        # mergestates:
+        #   NULL ... unprocessed
+        #   0 ... not merged
+        #   1 ... merged
         cursor = self.db.cursor()
         sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id, b.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NULL AND a.overVlbg IS NULL AND a.mergestate IS NULL AND b.mergestate IS NULL AND ABS(timestampdiff(MINUTE, a.ts, b.ts)) BETWEEN 0 AND 30 AND a.ts <= NOW() - INTERVAL 30 MINUTE AND aircrafts.hexident IS NOT NULL AND a.ts >= '2007-04-01 00:00' AND b.ts >= '2007-04-01 00:00' ORDER BY a.ts"
         cursor.execute(sql)
@@ -259,38 +260,26 @@ class FlightAnalyzer:
         self.tagFlight(flightid, isIntersecting)
     
     def checkFlight(self, flightid):
-        ''' check if flight went over Vorarlberg '''
+        ''' check if flight crosses area of Vorarlberg '''
 
-        # benchmark
+        isIntersecting = 0
         start = time.time()
-    
         # create linestring from flight route and check if it intersects
+        # bugfix 2007/07/09 some linestrings make the Intersect-method hang
+        # method 'Distance' solves the problem; drawback: consumes more CPU-power
         linestring = self.createFlightLine(flightid)
+        # linestrings with zero or only one point do not have to be considered
+        if linestring.GetPointCount() not in (0, 1):
+            distance = self.geometry.Distance(linestring)
+            logging.info("\tdistance: %f" %distance)
+            if distance == 0:
+                # zero distance between geometries means that they are intersecting
+                isIntersecting = 1
         
-        # calculate distance between adjacent points
-        distancetable = [0]
-        for i in range( linestring.GetPointCount() ):
-            point =  ogr.Geometry(ogr.wkbPoint)
-            point.SetPoint_2D(0, linestring.GetX(i), linestring.GetY(i))
-            try:
-                refpoint
-            except:
-                refpoint = point
-            
-            distance = refpoint.Distance(point)
-            distancetable.append(distance)
-            print distance
-            refpoint = point
-        # log largest distance
-        distancetable.sort()
-        logging.info("largest distance for flight %i: %f" %(flightid, distancetable[-1]))
-        
-        isIntersecting = self.geometry.Intersect(linestring)
-        
-        logging.info("flight #%i intersecting?: %i" %(flightid, isIntersecting))
-        logging.info("benchmark: %f seconds" % (time.time() - start))
+        logging.info("\tintersecting?: %i" % isIntersecting)
+        logging.info("\tbenchmark: %f seconds" % (time.time() - start))
         return isIntersecting
-    
+        
     def createFlightLine(self, flightid):
         """ access geographical database info and create linestring """
         
@@ -298,17 +287,31 @@ class FlightAnalyzer:
         sql = "SELECT latitude,longitude FROM flightdata WHERE flightid=%i" %flightid
         cursor.execute(sql)
         rs = cursor.fetchall()
-        
+       
+        # put relevant points in a list
+        points = []
+        for longitude, latitude in rs:
+            # pretty important: skip unnecessary (0, 0) coordinates! 
+            # (0, 0) is obviously sent when a new flight is picked up by the Basestation
+            if longitude != 0 or latitude != 0:
+                lon = float(longitude)
+                lat = float(latitude)
+                
+                # prevent duplicate points 
+                if (lat, lon) in points:
+                     pass
+                else:
+                    points.append( (lat, lon) )
+        cursor.close()
+       
         # create empty 2-dimensional linestring-object representing a flight route tracked by the SBS-1
         linestring = ogr.Geometry(ogr.wkbLineString)
         linestring.SetCoordinateDimension(2)
-        for longitude, latitude in rs:
-            #pretty important: skip unnecessary (0, 0) coordinates!
-            if longitude > 0 and latitude > 0:
-                linestring.AddPoint_2D(float(latitude), float(longitude))
-        cursor.close()
+        for lat, lon in points:
+             linestring.AddPoint_2D(lat, lon)
         
-        logging.info("pointcount: %i" % linestring.GetPointCount())
+        logging.info("\tpointcount: %i" % linestring.GetPointCount())
+        linestring.FlattenTo2D()
         return linestring
     
     def tagFlight(self, flightid, overVlbg=0):
@@ -330,11 +333,12 @@ def main():
     logging.info("### FLIGHTPROCESSOR started")
   
     analyzer = FlightAnalyzer( cfg.get('db', 'host'), cfg.get('db', 'database'), cfg.get('db', 'user'), cfg.get('db', 'password') )
-    # 1. remove senseless data! this approach is obsolete!
-    analyzer.cleanData()
-    # 2. merge flights and solve "callsign flickering" problem
+    # 1 merge flights to overcome "callsign flickering" issue
     analyzer.mergeFlights()
-    # 3. check if flights crossed area specified in shapefile
+    # 2 determine gps accuracy
+    velocitychecker = gpschecker.VelocityChecker( cfg.get('db', 'host'), cfg.get('db', 'database'), cfg.get('db', 'user'), cfg.get('db', 'password') )
+    velocitychecker.checkAllFlights()
+    # 3 check if flights crossed area specified in shapefile
     analyzer.geoclassifyFlights( cfg.get('flightprocessor', 'shapefile') )
     
     logging.info("### FLIGHTPROCESSOR finished")

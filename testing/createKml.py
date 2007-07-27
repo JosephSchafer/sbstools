@@ -7,6 +7,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 overVlbg = (1,0)
+overVlbg = (1,)
 
 class HTMLCreator:
     ''' hacky thing to create html with google maps, flights and infos '''
@@ -88,7 +89,7 @@ class KMLCreator:
     
     def createFile(self):
         ''' create kml file! '''
-        basesql = "SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '%s' AND '%s'" % (self.startdate, self.enddate)
+        basesql = "SELECT distinct flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '%s' AND '%s' AND gpsaccuracy>=7" % (self.startdate, self.enddate)
         logging.info(basesql)
         
         # flights crossing Vorarlberg
@@ -117,7 +118,7 @@ class KMLCreator:
                 #SKIP = 30
                 #length = len(rs2)
                 #SKIP = length / 25
-                SKIP = 1#0
+                SKIP = 20#0
                 if SKIP == 0:
                     SKIP = 1
                 coordinateinfo = ""     
@@ -221,7 +222,7 @@ class KMLCreator:
                 SKIP = length / 5
                 coordinateinfo = ""     
                 logging.info(SKIP)
-		SKIP = 1
+		#SKIP = 1
                 for data in rs2:
                     longitude= data[0]
                     latitude = data[1]
