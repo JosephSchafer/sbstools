@@ -74,7 +74,7 @@ class VelocityChecker:
         ''' check all flights '''
         
         cursor = self.db.cursor()
-        sql = "SELECT id FROM flights WHERE gpsaccuracy IS NULL and ts > '2007-04-01 00:00'"
+        sql = "SELECT id FROM flights WHERE mergestate IS NOT NULL AND gpsaccuracy IS NULL AND ts > '2007-04-01 00:00'"
         cursor.execute(sql)
         rs = cursor.fetchall()
         for record in rs:
@@ -90,6 +90,7 @@ class VelocityChecker:
         sql = "UPDATE flights SET gpsaccuracy=%i WHERE id=%i" % (gpsaccuracy, flightid)
         logging.info(sql)
         cursor.execute(sql)
+        self.db.commit()
         cursor.close()
     
     def checkFlight(self, flightid):
