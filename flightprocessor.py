@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/pythonmer
 # Applying operations to flights (the order is important!) 
 #   1 merge flights (keyword "callsign flickering")
 #   2 determine accuracy of gps-info
@@ -188,13 +188,16 @@ class FlightAnalyzer:
     
     def mergeFlights(self):
         ''' fix callsign flickering troubles '''
+        
         # see forum posting: http://www.kinetic-avionics.co.uk/forums/viewtopic.php?t=3782
         # mergestates:
         #   NULL ... unprocessed
         #   0 ... not merged
         #   1 ... merged
         cursor = self.db.cursor()
-        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id, b.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NULL AND a.overVlbg IS NULL AND a.mergestate IS NULL AND b.mergestate IS NULL AND ABS(timestampdiff(MINUTE, a.ts, b.ts)) BETWEEN 0 AND 30 AND a.ts <= NOW() - INTERVAL 30 MINUTE AND aircrafts.hexident IS NOT NULL AND a.ts >= '2007-04-01 00:00' AND b.ts >= '2007-04-01 00:00' ORDER BY a.ts"
+        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id, b.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NULL AND a.overVlbg IS NULL AND a.mergestate IS NULL AND b.mergestate IS NULL AND ABS(timestampdiff(MINUTE, a.ts, b.ts)) BETWEEN 0 AND 30 AND b.ts <= NOW() - INTERVAL 30 MINUTE AND aircrafts.hexident IS NOT NULL AND a.ts >= '2007-04-01 00:00' AND b.ts >= '2007-04-01 00:00' ORDER BY a.ts"
+        # clock befor sql statement is executed
+        timeinfo = time.strftime('%Y-%m-%d %H:%M')
         cursor.execute(sql)
         rs = cursor.fetchall()
         
@@ -233,26 +236,33 @@ class FlightAnalyzer:
                 logging.warn(str(e))
                 self.db.rollback()
             self.db.commit()
-            
-        # set mergestate-flag for non-callsign-flickering flights!
-        # UPDATE with subselect was not possible: http://dev.mysql.com/doc/refman/5.0/en/subquery-errors.html
-        sql = "SELECT DISTINCT id FROM flights WHERE flights.mergestate IS NULL AND flights.ts < NOW() - INTERVAL 30 MINUTE AND id NOT IN (SELECT DISTINCT a.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NOT NULL AND a.overVlbg IS NOT NULL AND ABS(timestampdiff(MINUTE, a.ts, b.ts)) BETWEEN 0 AND 30 AND a.ts <= NOW() - INTERVAL 30 MINUTE AND aircrafts.hexident IS NOT NULL AND a.ts >= '2007-04-01 00:00' AND b.ts >= '2007-04-01 00:00')"
-        cursor.execute(sql) 
+        
+        # set mergestate for all flights not touched by the merge function
+        sql = "UPDATE flights SET mergestate=0 WHERE mergestate IS NULL AND ts < '%s' - INTERVAL 30 MINUTE" % timeinfo
+        cursor.execute(sql)
         logging.info(sql)
-        
-        # create a list of flights which do not have to be merged
-        flightids = []
-        rs = cursor.fetchall()
-        for record in rs:
-            flightids.append(record[0])
-        
-        # tag the flights
-        for flightid in flightids:
-            sql = "UPDATE flights SET mergestate=0 WHERE ID=%i" %flightid
-            logging.info(sql)
-            cursor.execute(sql)
         self.db.commit()
         cursor.close()
+    
+        # set mergestate-flag for non-callsign-flickering flights!
+        # UPDATE with subselect was not possible: http://dev.mysql.com/doc/refman/5.0/en/subquery-errors.html
+        #sql = "SELECT DISTINCT id FROM flights WHERE flights.mergestate IS NULL AND flights.ts < NOW() - INTERVAL 30 MINUTE AND id NOT IN (SELECT DISTINCT a.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NOT NULL AND a.overVlbg IS NOT NULL AND ABS(timestampdiff(MINUTE, a.ts, b.ts)) BETWEEN 0 AND 30 AND a.ts <= NOW() - INTERVAL 30 MINUTE AND aircrafts.hexident IS NOT NULL AND a.ts >= '2007-04-01 00:00' AND b.ts >= '2007-04-01 00:00')"
+        #cursor.execute(sql) 
+        #logging.info(sql)
+        
+        # create a list of flights which do not have to be merged
+        #flightids = []
+        #rs = cursor.fetchall()
+        #for record in rs:
+        #    flightids.append(record[0])
+        
+        # tag the flights
+        #for flightid in flightids:
+        #    sql = "UPDATE flights SET mergestate=0 WHERE ID=%i" %flightid
+        #    logging.info(sql)
+        #    cursor.execute(sql)
+        #self.db.commit()
+        #cursor.close()
     
     def geoclassifyFlight(self, flightid):
         ''' check&tag flight '''
