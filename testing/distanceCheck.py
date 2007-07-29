@@ -10,7 +10,7 @@ import math
 from ConfigParser import SafeConfigParser
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
-verbose = 0
+verbose = 1
 MAXSPEED1 = 1500
 MAXSPEED2 = 2500
 
@@ -167,7 +167,8 @@ def main():
     dbpassword = cfg.get('db', 'password') 
     
     distancechecker = DistanceChecker(dbhost, dbname, dbuser, dbpassword)
-    distancechecker.checkAllFlights()
+    #distancechecker.checkAllFlights()
+    distancechecker.checkFlight(237055)
     #distancechecker.checkFlight(4788)
     #distancechecker.checkFlight(4740)
     #distancechecker.checkFlight(101545)
