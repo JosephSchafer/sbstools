@@ -226,7 +226,7 @@ class FlightAnalyzer:
                 self.db.rollback()
             self.db.commit()
         
-        # set mergestate for all flights not touched by the merge function
+        # set mergestate to zero for all flights not touched by the merge function above
         sql = "UPDATE flights SET mergestate=0 WHERE mergestate IS NULL AND ts < '%s' - INTERVAL %i MINUTE" % (timeinfo, self.mergetimespan)
         cursor.execute(sql)
         logging.info(sql)
@@ -243,9 +243,9 @@ class FlightAnalyzer:
 
         isIntersecting = 0
         start = time.time()
-        # create linestring from flight route and check if it intersects
-        # bugfix 2007/07/09 some linestrings make the Intersect-method hang
-        # method 'Distance' solves the problem; drawback: consumes more CPU-power
+        # create linestring for flight route and check if it intersects
+        # bugfix 2007/07/09: some linestrings make the Intersect-method hang (at least with python 2.4.x)
+        # method 'Distance' solves the problem =>drawback: consumes more CPU-power
         linestring = self.createFlightLine(flightid)
         # linestrings with zero or only one point do not have to be considered
         if linestring.GetPointCount() not in (0, 1):
@@ -276,7 +276,7 @@ class FlightAnalyzer:
                 lon = float(longitude)
                 lat = float(latitude)
                 
-                # prevent duplicate points 
+                # prevent duplicate points in our linestring 
                 if (lat, lon) in points:
                      pass
                 else:
@@ -312,8 +312,9 @@ def main():
     logging.info("### FLIGHTPROCESSOR started")
   
     analyzer = FlightAnalyzer( cfg.get('db', 'host'), cfg.get('db', 'database'), cfg.get('db', 'user'), cfg.get('db', 'password') )
-    timespan = cfg.getint('flightprocessor', 'mergetimespan')
-    analyzer.setMergetimespan(timespan)
+    # set times interval for flights to be merged, i.e. flights with identical aircrafts less than x minutes apart are considered to be equal 
+    mergetimespan = cfg.getint('flightprocessor', 'mergetimespan')
+    analyzer.setMergetimespan(mergetimespan)
     
     # 1 merge flights to overcome "callsign flickering" issue
     analyzer.mergeFlights()
