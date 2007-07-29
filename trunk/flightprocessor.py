@@ -1,4 +1,4 @@
-#!/usr/bin/pythonmer
+#!/usr/bin/python
 # Applying operations to flights (the order is important!) 
 #   1 merge flights (keyword "callsign flickering")
 #   2 determine accuracy of gps-info
@@ -16,6 +16,7 @@ from ConfigParser import SafeConfigParser
 import gpschecker
 
 LOGFILE = "flightprocessor.log"
+
 def setupLogging():
     ''' set up the Python logging facility '''
     
@@ -39,7 +40,7 @@ class FlightMerger:
         self.flighttimestamps = {} # flightid-to-timestamp mapping, e.g. {3234: '2007-04-23 23:23'} 
         
     def determineCallsign(self, flightid):
-        ''' select the callsign which is most likely the "correct" one for this flight '''
+        ''' choose the callsign which is most likely the "correct" one for this flight '''
         
         mappings = self.flightmappings.get(flightid, None)
         if mappings == None:
@@ -68,7 +69,6 @@ class FlightMerger:
     def addFlight(self, flightid, callsign, hexident, timestamp):
         ''' adding flight to table '''
     
-        TIMESPAN = 30
         # UNIX timestamp of current flightid
         ts = time.mktime( timestamp.timetuple() )
         
@@ -83,7 +83,7 @@ class FlightMerger:
                 timediff = abs(ts_id - ts)
                 
                 # same aircraft and within time span of 30 minutes => current flight will be merged!
-                if timediff <= TIMESPAN*60:
+                if timediff <= self.mergetimespan*60:
                     mergeflight = True
                     mappings = self.flightmappings.get( id )
                     if (flightid, callsign) not in mappings:
@@ -92,7 +92,7 @@ class FlightMerger:
                         self.flighttimestamps[flightid] = ts
                     break
                 
-            # same aircraft, but appeared later => this is an INDEPENDENT flight!
+            # same aircraft, but appeared later => this is another flight!
             if mergeflight == False:
                 ids.append( flightid )
                 self.hexidents[hexident] = ids
@@ -123,7 +123,7 @@ class FlightMerger:
             for connectedflight in connectedflights:
                 cf_unixtime = self.flighttimestamps.get(connectedflight)
                 cf_ts = datetime.datetime.fromtimestamp(cf_unixtime).isoformat()
-                diff = (cf_unixtime-unixtime)/60
+                diff = (cf_unixtime-unixtime) / 60
                 # measure biggest difference
                 if diff > diffmax:
                     diffmax = diff
@@ -145,23 +145,11 @@ class FlightAnalyzer:
     
     def __init__(self, host, database, user, password):
         self.db = MySQLdb.connect(host = host, db = database, user = user, passwd = password)
-        
-    def cleanData(self):
-        ''' remove senseless data '''
-        
-        # sometimes senseless GPS-data is sent by aircrafts!
-        # IMPORTANT! the range is only valid for certain locations, here: Hittisau
-        # assumption: gps coordinates with longitude not in [3, 15] or latitude not in [40, 50] are invalid
-        # __FIXME__: filtering should happen at flightobserver.py
-        #cursor = self.db.cursor()
-        #sql = "DELETE FROM flightdata WHERE flightid IN (SELECT id FROM flights WHERE mergestate IS NULL) AND (LONGITUDE <= 3 OR LONGITUDE >=15 OR LATITUDE <= 40 OR LATITUDE >= 50)"
-        #sql = "DELETE FROM flightdata WHERE longitude=0 AND latitude=0"
-        #logging.info("cleaning data from (0,0) coordinates ...")
-        #logging.info(sql)
-        #cursor.execute(sql)
-        #cursor.close()
-        pass
-        
+    
+    def setMergetimespan(self, timespan):
+        ''' minutes within which a flight with same aircraft is considered to be only one'''
+        self.mergetimespan = timespan
+    
     def geoclassifyFlights(self, shapefile):
         ''' check if flight crossed a certain region '''
         
@@ -195,13 +183,15 @@ class FlightAnalyzer:
         #   0 ... not merged
         #   1 ... merged
         cursor = self.db.cursor()
-        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id, b.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NULL AND a.overVlbg IS NULL AND a.mergestate IS NULL AND b.mergestate IS NULL AND ABS(timestampdiff(MINUTE, a.ts, b.ts)) BETWEEN 0 AND 30 AND b.ts <= NOW() - INTERVAL 30 MINUTE AND aircrafts.hexident IS NOT NULL AND a.ts >= '2007-04-01 00:00' AND b.ts >= '2007-04-01 00:00' ORDER BY a.ts"
+        sql = "SELECT DISTINCT a.ts, aircrafts.hexident, a.callsign, a.id, b.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NULL AND a.overVlbg IS NULL AND a.mergestate IS NULL AND b.mergestate IS NULL AND ABS(timestampdiff(MINUTE, a.ts, b.ts)) BETWEEN 0 AND %i AND b.ts <= NOW() - INTERVAL %i MINUTE AND aircrafts.hexident IS NOT NULL AND a.ts >= '2007-04-01 00:00' AND b.ts >= '2007-04-01 00:00' ORDER BY a.ts" % (self.mergetimespan, self.mergetimespan)
         # clock befor sql statement is executed
         timeinfo = time.strftime('%Y-%m-%d %H:%M')
         cursor.execute(sql)
         rs = cursor.fetchall()
         
         tbl = FlightMerger()
+        tbl.mergetimespan = self.mergetimespan
+        
         for record in rs:
             ts, hexident, callsign, flightid, flightid2 = record
             tbl.addFlight(flightid, callsign, hexident, ts)
@@ -213,7 +203,6 @@ class FlightAnalyzer:
         cursor = self.db.cursor()
         cursor.execute("SET AUTOCOMMIT=0")
         for flightid, callsign, mergingids in mergeinfo:
-            
             # start transaction
             # __FIXME__: improve performance by issuing combined sql-statements: UPDATE flightdata SET flightid=.. WHERE flightid=x OR flightid=y ...
             try:
@@ -238,31 +227,11 @@ class FlightAnalyzer:
             self.db.commit()
         
         # set mergestate for all flights not touched by the merge function
-        sql = "UPDATE flights SET mergestate=0 WHERE mergestate IS NULL AND ts < '%s' - INTERVAL 30 MINUTE" % timeinfo
+        sql = "UPDATE flights SET mergestate=0 WHERE mergestate IS NULL AND ts < '%s' - INTERVAL %i MINUTE" % (timeinfo, self.mergetimespan)
         cursor.execute(sql)
         logging.info(sql)
         self.db.commit()
         cursor.close()
-    
-        # set mergestate-flag for non-callsign-flickering flights!
-        # UPDATE with subselect was not possible: http://dev.mysql.com/doc/refman/5.0/en/subquery-errors.html
-        #sql = "SELECT DISTINCT id FROM flights WHERE flights.mergestate IS NULL AND flights.ts < NOW() - INTERVAL 30 MINUTE AND id NOT IN (SELECT DISTINCT a.id FROM flights AS a, flights as b INNER JOIN aircrafts ON aircraftid = aircrafts.id WHERE a.aircraftid=b.aircraftid AND a.id != b.id AND b.overVlbg IS NOT NULL AND a.overVlbg IS NOT NULL AND ABS(timestampdiff(MINUTE, a.ts, b.ts)) BETWEEN 0 AND 30 AND a.ts <= NOW() - INTERVAL 30 MINUTE AND aircrafts.hexident IS NOT NULL AND a.ts >= '2007-04-01 00:00' AND b.ts >= '2007-04-01 00:00')"
-        #cursor.execute(sql) 
-        #logging.info(sql)
-        
-        # create a list of flights which do not have to be merged
-        #flightids = []
-        #rs = cursor.fetchall()
-        #for record in rs:
-        #    flightids.append(record[0])
-        
-        # tag the flights
-        #for flightid in flightids:
-        #    sql = "UPDATE flights SET mergestate=0 WHERE ID=%i" %flightid
-        #    logging.info(sql)
-        #    cursor.execute(sql)
-        #self.db.commit()
-        #cursor.close()
     
     def geoclassifyFlight(self, flightid):
         ''' check&tag flight '''
@@ -343,6 +312,9 @@ def main():
     logging.info("### FLIGHTPROCESSOR started")
   
     analyzer = FlightAnalyzer( cfg.get('db', 'host'), cfg.get('db', 'database'), cfg.get('db', 'user'), cfg.get('db', 'password') )
+    timespan = cfg.getint('flightprocessor', 'mergetimespan')
+    analyzer.setMergetimespan(timespan)
+    
     # 1 merge flights to overcome "callsign flickering" issue
     analyzer.mergeFlights()
     # 2 determine gps accuracy
