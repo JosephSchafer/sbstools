@@ -165,7 +165,7 @@ class FlightAnalyzer:
         # -> 1. only check flights which were added more than 6 minutes ago
         # -> 2. only check flights where the most recent flightdata is older than 6 minutes
         # -> 3. only check flights which have already been merged, i.e. where mergestate NOT NULL
-        sql = "SELECT id FROM flights WHERE overVlbg IS NULL AND ts < NOW()-INTERVAL 6 MINUTE AND id NOT IN (SELECT DISTINCT flightid FROM flightdata WHERE time  > NOW()-INTERVAL 6 MINUTE) AND flights.aircraftid NOT in (SELECT DISTINCT aircraftid FROM flights INNER JOIN flightdata ON flights.id = flightdata.flightid AND ts > NOW()-INTERVAL 6 MINUTE) AND flights.mergestate IS NOT NULL"
+        sql = "SELECT id FROM flights WHERE overVlbg IS NULL AND ts < NOW()-INTERVAL 6 MINUTE AND id NOT IN (SELECT DISTINCT flightid FROM flightdata WHERE time  > NOW()-INTERVAL 6 MINUTE) AND flights.aircraftid NOT in (SELECT DISTINCT aircraftid FROM flights INNER JOIN flightdata ON flights.id = flightdata.flightid AND ts > NOW()-INTERVAL 6 MINUTE) AND flights.mergestate IS NOT NULL ORDER BY ts DESC"
         cursor.execute(sql)
         rs = cursor.fetchall()
         # loop over all flights and check'em 
