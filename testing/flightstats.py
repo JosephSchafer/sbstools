@@ -35,27 +35,37 @@ class Flightstats:
         ''' start engine '''
         
         callsigns = []
-        cursor = self.db.cursor()
-        sql = "SELECT DISTINCT callsign FROM flights WHERE gpsaccuracy>=8 AND overvlbg=1 AND ts BETWEEN '2007-06-01 00:00' AND '2007-07-01 00:00"
+        callsigns2 = []
+        newbies = []
+	cursor = self.db.cursor()
+        sql = "SELECT DISTINCT callsign FROM flights WHERE gpsaccuracy>=8  AND ts BETWEEN '2007-06-01 00:00' AND '2007-07-01 00:00'"
         cursor.execute(sql)
         rs = cursor.fetchall()
         for record in rs:
             callsign = record[0]
             callsigns.append(callsign)
         
-        callsigns2 = []
-        sql = "SELECT DISTINCT callsign FROM flights WHERE gpsaccuracy>=8 AND overvlbg=1 AND ts BETWEEN '2007-07-01 00:00' AND '2007-08-01 00:00"
+        sql = "SELECT DISTINCT callsign FROM flights WHERE gpsaccuracy>=8 AND overvlbg=1 AND ts BETWEEN '2007-07-01 00:00' AND '2007-08-01 00:00'"
         cursor.execute(sql)
+        rs = cursor.fetchall()
         for record in rs:
             callsign = record[0]
             callsigns2.append(callsign)
         cursor.close()
-        
-        # show difference
+       
+        print len(callsigns)
+	print len(callsigns2)
+	# show difference
+	counter = 0
         for callsign in callsigns2:
             if callsign not in callsigns:
-                print "callsign %s new!" %callsign
-                
+		newbies.append(callsign)
+
+	newbies.sort()
+	for newbie in newbies:
+		print newbie
+	print len(newbies)
+
 def main():
     ''' distance checker '''
     
