@@ -47,9 +47,10 @@ class FlightReader:
             logging.info( "distance: %i" %dist )
             logging.info( "cumulated distance: %i" %cumulateddist )
             if cumulateddist > THRESHOLD:
-                rpoints.append( (longitude, latitude, altitude) )
-                logging.info( "appending point (%f, %f, %d)" %(longitude, latitude, altitude) )
-                cumulateddist = 0
+                if (longitude, latitude, altitude) not in rpoints:
+                    rpoints.append( (longitude, latitude, altitude) )
+                    logging.info( "appending point (%f, %f, %d)" %(longitude, latitude, altitude) )
+                    cumulateddist = 0
             lat, long, alt = latitude, longitude, altitude
         # make sure that very last point in reduced list
         if points[-1] not in rpoints:
@@ -82,8 +83,8 @@ class FlightReader:
                 rs2 = cursor2.fetchall()
                 points = []
                 for longitude, latitude, altitude, time in rs2:
-                    #longitude = Decimal('%f' %longitude)
-                    #latitude = Decimal('%f' %latitude)
+                    # convert altitude from ft to m
+                    altitude = altitude * 0.3048
                     logging.info( (longitude, latitude, altitude) )
                     points.append( (longitude, latitude, altitude) )
                 cursor2.close()
