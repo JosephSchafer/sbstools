@@ -7,7 +7,10 @@ import ogr, osr
 import sys, os
 import math
 from decimal import *
+sys.path.append('/home/db/verkehrt.net/flugverkehr/sbstools')
+from gpschecker import DistanceCalc
 from ConfigParser import SafeConfigParser
+
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 verbose = 1
@@ -24,6 +27,32 @@ class FlightReader:
     def setDate(self, date):
         ''' set date limit '''
         self.date = date
+        
+    def reducePoints(self, points):
+        ''' reduce amount of points '''
+        
+        THRESHOLD = 1000 # in metres
+        # reduce amount of points
+        # threshold: 1km; start- + endpoint shall be kept
+        cumulateddist = 0
+        # reducedpoints
+        rpoints = []
+        point = ( points[0][0], points[0][1] )
+        rpoints.append( point )
+        for longitude, latitude, altitude in points:
+            dist = DistanceCalc.distance( point[1], point[0], latitude, longitude )
+            cumulateddist += dist
+            logging.info( "cumulated distance: %i" %cumulateddist )
+            if cumulateddist > THRESHOLD:
+                rpoints.append( (longitude, latitude) )
+                logging.info( "appending point (%f, %f)" %(longitude, latitude) )
+                cumulateddist = 0
+        
+        # make sure that very last point in reduced list
+        if (points[-1][0], points[-1][1]) not in rpoints:
+            rpoints.append( points[-1][0], points[-1][1] )
+        
+        return rpoints
         
     def grabFlights(self):
             ''' read flights from database '''
@@ -55,6 +84,7 @@ class FlightReader:
                     logging.info( (longitude, latitude, altitude) )
                     points.append( (longitude, latitude, altitude) )
                 cursor2.close()
+                points = self.reducePoints( points )
                 flights.append( (callsign, hexident, ts, points) )
             
             return flights
