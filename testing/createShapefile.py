@@ -7,7 +7,7 @@ import ogr, osr
 import sys, os
 import math
 from decimal import *
-sys.path.append('/home/db/verkehrt.net/flugverkehr/sbstools')
+sys.path.append('/tmp/sbstools')
 from gpschecker import DistanceCalc
 from ConfigParser import SafeConfigParser
 
@@ -30,27 +30,30 @@ class FlightReader:
         
     def reducePoints(self, points):
         ''' reduce amount of points '''
-        
+       
+        distcalc = DistanceCalc() 
         THRESHOLD = 1000 # in metres
         # reduce amount of points
         # threshold: 1km; start- + endpoint shall be kept
         cumulateddist = 0
         # reducedpoints
         rpoints = []
-        point = ( points[0][0], points[0][1] )
+        point = points[0]
         rpoints.append( point )
+        lat,long,alt = point
         for longitude, latitude, altitude in points:
-            dist = DistanceCalc.distance( point[1], point[0], latitude, longitude )
+            dist = distcalc.distance( lat, long, latitude, longitude )
             cumulateddist += dist
+            logging.info( "distance: %i" %dist )
             logging.info( "cumulated distance: %i" %cumulateddist )
             if cumulateddist > THRESHOLD:
-                rpoints.append( (longitude, latitude) )
-                logging.info( "appending point (%f, %f)" %(longitude, latitude) )
+                rpoints.append( (longitude, latitude, altitude) )
+                logging.info( "appending point (%f, %f, %d)" %(longitude, latitude, altitude) )
                 cumulateddist = 0
-        
+            lat, long, alt = latitude, longitude, altitude
         # make sure that very last point in reduced list
-        if (points[-1][0], points[-1][1]) not in rpoints:
-            rpoints.append( points[-1][0], points[-1][1] )
+        if points[-1] not in rpoints:
+            rpoints.append( points[-1] )
         
         return rpoints
         
@@ -60,7 +63,7 @@ class FlightReader:
                 self.setDate( time.strftime("%Y-%m-%d") )
             
             flights = []
-            sql = self.basesql + " AND overvlbg=1 AND DATE(ts) = '%s' LIMIT 2" %self.date
+            sql = self.basesql + " AND overvlbg=1 AND DATE(ts) = '%s' LIMIT 5" %self.date
             logging.info( sql )
             cursor = self.db.cursor()
             cursor.execute( sql )
@@ -79,8 +82,8 @@ class FlightReader:
                 rs2 = cursor2.fetchall()
                 points = []
                 for longitude, latitude, altitude, time in rs2:
-                    longitude = Decimal('%f' %longitude)
-                    latitude = Decimal('%f' %latitude)
+                    #longitude = Decimal('%f' %longitude)
+                    #latitude = Decimal('%f' %latitude)
                     logging.info( (longitude, latitude, altitude) )
                     points.append( (longitude, latitude, altitude) )
                 cursor2.close()
