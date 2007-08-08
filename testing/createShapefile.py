@@ -6,6 +6,7 @@ import logging
 import ogr, osr
 import sys, os
 import math
+from decimal import *
 from ConfigParser import SafeConfigParser
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -16,8 +17,8 @@ class FlightReader:
     
     def __init__(self, host, db, user, passwd):
         ''' establish database connection '''
-        self.db = MySQLdb.connect(host = self.host, db = self.database, user = self.user, passwd = self.password)
-        self.basesql = "SELECT DISTINCT flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE ts BETWEEN '%s' AND '%s' AND gpsaccuracy>=8" % (self.startdate, self.enddate)
+        self.db = MySQLdb.connect(host=host, db=db, user=user, passwd=passwd)
+        self.basesql = "SELECT DISTINCT flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE gpsaccuracy>=8"
         self.date = None
     
     def setDate(self, date):
@@ -30,8 +31,9 @@ class FlightReader:
                 self.setDate( time.strftime("%Y-%m-%d") )
             
             flights = []
-            sql = self.basesql + " AND overvlbg=1 AND DATE(ts) = %s" %self.date
+            sql = self.basesql + " AND overvlbg=1 AND DATE(ts) = '%s' LIMIT 2" %self.date
             logging.info( sql )
+            cursor = self.db.cursor()
             cursor.execute( sql )
             rs = cursor.fetchall()
         
@@ -44,11 +46,15 @@ class FlightReader:
                 sql2 = "SELECT longitude, latitude, altitude, time FROM flightdata WHERE flightid=%i AND longitude != 0 AND latitude != 0" %flightid
                 logging.info(sql2)
                 cursor2 = self.db.cursor()
-                cursor2.execute(sql)
+                cursor2.execute(sql2)
                 rs2 = cursor2.fetchall()
                 points = []
                 for longitude, latitude, altitude, time in rs2:
+                    longitude = Decimal('%f' %longitude)
+                    latitude = Decimal('%f' %latitude)
+                    logging.info( (longitude, latitude, altitude) )
                     points.append( (longitude, latitude, altitude) )
+                cursor2.close()
                 flights.append( (callsign, hexident, ts, points) )
             
             return flights
@@ -111,13 +117,15 @@ def main():
     dbname = cfg.get('db', 'database')
     dbuser = cfg.get('db', 'user')
     dbpassword = cfg.get('db', 'password') 
-    
+   
+    print dbhost, dbname, dbuser, dbpassword 
     flightreader = FlightReader(dbhost, dbname, dbuser, dbpassword)
-    flights = flightreader.getFlights()
+    flightreader.setDate('2007-07-07')
+    flights = flightreader.grabFlights()
     creator = ShapefileCreator()
     for callsign, hexident, datetime, points in flights:
         creator.addFlight(callsign, hexident, datetime, points)
-    creator.run()
+    creator.createFile()
     
     logging.info("### shapefile creator finished")
  
