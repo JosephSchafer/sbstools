@@ -97,6 +97,8 @@ class ShapefileCreator:
     
     def __init__(self):
         self.flights = []
+        self.osr = osr.SpatialReference()
+        self.osr.SetWellKnownGeogCS('WGS84')
         
     def addFlight(self, callsign, hexident, datetime, points):
         ''' add linestring '''
@@ -106,7 +108,7 @@ class ShapefileCreator:
     def createFile(self):
         ''' start the engine '''
         
-        filename = 'export.shp'
+        filename = 'export_2007-07-07.shp'
         driver = ogr.GetDriverByName(self.SHAPEFILEDRV)
         if os.path.exists(filename):
             driver.DeleteDataSource(filename)
@@ -131,6 +133,7 @@ class ShapefileCreator:
             feature.SetField( 'datetime', datetime )
             linestring = ogr.Geometry(ogr.wkbLineString25D)
             linestring.SetCoordinateDimension(3)
+            linestring.AssignSpatialReference( self.osr )
             for x, y, z in points:
                 linestring.AddPoint(x, y, z)
             feature.SetGeometryDirectly(linestring)
