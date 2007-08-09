@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# callsign stats: which flights appeared
+# callsign stats: compare callsigns of two months
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
 import MySQLdb
 import logging
@@ -25,49 +25,74 @@ def setupLogging():
     logger.setLevel(logging.INFO)
     logging.getLogger('').addHandler(handler)
    
+class Flightstbl:
+    ''' table containing flight infos '''
+    
+    def __init__(self): 
+        self.tbl = {}
+    
+    def addFlight(self, name, callsign, options={}):
+        ''' add flight to tbl '''
+        
+        flights = self.tbl.get( callsign )
+        if flights == None:
+            flights = [ (name, options) ]
+        else:
+            flights.append( (name, options) )
+        self.tbl[callsign] = flights
+        
+    def printStats(self):
+        ''' print statistics '''
+        
+        for key in self.tbl.keys():
+            flights = self.tbl.get( key )
+            names = set( [name for name, options in flights] )
+            logging.info("->callsign %s" %key)
+            for name in names:
+                count = len( [name for name, options in flights if name==name] )
+                logging.info("\t-%s %i" %(name, count) )
+        
 class Flightstats:
     ''' statistics about flights  '''
     
     def __init__(self, host, db, user, password):
         self.db = MySQLdb.connect(host = host, db = db, user = user, passwd = password)
-      
+        self.month1 = self.year1 = self.month2 = self.year2 = None
+    
+    def setComparisonMonths(self, month1, year1, month2, year2):
+        ''' these two periods shall be compared '''
+        
+        self.month1 = month1
+        self.year1 = year1
+        self.month2 = month2
+        self.year2 = year2
+        
     def run(self):
         ''' start engine '''
         
-        callsigns = []
-        callsigns2 = []
-        newbies = []
-	cursor = self.db.cursor()
-        sql = "SELECT DISTINCT callsign FROM flights WHERE gpsaccuracy>=8  AND ts BETWEEN '2007-06-01 00:00' AND '2007-07-01 00:00'"
+        tbl = Flightstbl()
+        cursor = self.db.cursor()
+        sql = "SELECT DISTINCT callsign FROM flights WHERE gpsaccuracy>=8  AND overvlbg=1 AND MONTH(ts)=%i AND YEAR(ts)=%i" %(self.month1, self.year1)
+        logging.debug(sql)
         cursor.execute(sql)
         rs = cursor.fetchall()
         for record in rs:
             callsign = record[0]
-            callsigns.append(callsign)
+            tbl.addFlight( "%i-%i"%(month1, year1), callsign ) 
         
-        sql = "SELECT DISTINCT callsign FROM flights WHERE gpsaccuracy>=8 AND overvlbg=1 AND ts BETWEEN '2007-07-01 00:00' AND '2007-08-01 00:00'"
+        sql = "SELECT DISTINCT callsign FROM flights WHERE gpsaccuracy>=8 AND overvlbg=1 AND MONTH(ts)=%i AND YEAR(ts)=%i" %(self.month2, self.year2)
+        logging.debug(sql)
         cursor.execute(sql)
         rs = cursor.fetchall()
         for record in rs:
             callsign = record[0]
-            callsigns2.append(callsign)
+            tbl.addFlight( "%i-%i"%(month2, year2), callsign )
         cursor.close()
-       
-        print len(callsigns)
-	print len(callsigns2)
-	# show difference
-	counter = 0
-        for callsign in callsigns2:
-            if callsign not in callsigns:
-		newbies.append(callsign)
-
-	newbies.sort()
-	for newbie in newbies:
-		print newbie
-	print len(newbies)
-
+        
+        tbl.printStats()
+      
 def main():
-    ''' distance checker '''
+    ''' month comparison tool '''
     
     logging.info("### flightstats started")
     logging.info("reading configuration ...")
@@ -79,6 +104,7 @@ def main():
     dbpassword = cfg.get('db', 'password') 
     
     fs = Flightstats(dbhost, dbname, dbuser, dbpassword)
+    fs.setComparisonMonths(4, 2007, 7, 2007)
     fs.run()
     logging.info("### flightstats finished")
  
