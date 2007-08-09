@@ -5,6 +5,7 @@ import time
 import MySQLdb
 import logging
 import sys, os
+import time
 from ConfigParser import SafeConfigParser
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -111,13 +112,25 @@ def main():
     reducer.setPercentage(percentage)
     logging.info("%i percent of flightdata will be kept" %percentage)
     
+    # to guarantee that NOT REDUCED flightdata
+    # is to be stored, only reduce flightdata up to 2 months before
+    STEP = 2
+    timetuple = time.localtime()
+    year = timetuple[0]
+    month = timetuple[1]
+    month -= STEP
+    if month < 1:
+        month = 12  - abs(month)
+        year -= 1
+    
     cursor = reducer.db.cursor()
     # grab all flights, which:
     # - are not yet reduced (state IS NULL)
     # - did _not_ cross Vorarlberg (overVlbg=0)
     # - where the callsign flickering problem was solved (mergestate IS NOT NULL)
     # - where the gpsaccuracy-check was already completed
-    sql = "SELECT id FROM flights WHERE state IS NULL AND overVlbg=0 AND mergestate IS NOT NULL AND gpsaccuracy IS NOT NULL"
+    sql = "SELECT id FROM flights WHERE state IS NULL AND overVlbg=0 AND mergestate IS NOT NULL AND gpsaccuracy IS NOT NULL AND MONTH(ts) <=%i AND YEAR(ts) <=%i" %(month, year)
+    logging.info(sql)
     cursor.execute(sql)
     rs = cursor.fetchall()
     
