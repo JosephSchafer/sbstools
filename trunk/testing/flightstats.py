@@ -11,6 +11,8 @@ from ConfigParser import SafeConfigParser
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
+vlbg = (1,)
+
 def setupLogging():
     ''' set up the Python logging facility '''
 
@@ -32,14 +34,14 @@ class Flightstbl:
         self.tbl = {}
         self.names = []
     
-    def addFlight(self, name, callsign, options={}):
+    def addFlight(self, name, callsign, overvlbg, options={}):
         ''' add flight to tbl '''
         
         flights = self.tbl.get( callsign )
         if flights == None:
-            flights = [ (name, options) ]
+            flights = [ (name, overvlbg, options) ]
         else:
-            flights.append( (name, options) )
+            flights.append( (name, overvlbg, options) )
         self.tbl[callsign] = flights
 
         if name not in self.names:
@@ -48,7 +50,6 @@ class Flightstbl:
     def printStats(self):
         ''' print statistics '''
         
-        print self.tbl 
         names = self.names 
         logging.info( names )
         keys = self.tbl.keys()
@@ -58,11 +59,12 @@ class Flightstbl:
         for key in keys:
             flights = self.tbl.get( key )
             logging.info("%s" %key)
-            line = ""
-            for n in names:
-                count = [ name for name, stuff in flights].count(n)
-                line += "\t %i" %count
-            logging.info( line )
+            for xvlbg in vlbg:
+                line = ""
+                for n in names:
+                    count = [ name for name, overvlbg, stuff in flights if overvlbg==xvlbg].count(n)
+                    line += "\t %i" %count
+                logging.info( line )
         
 class Flightstats:
     ''' statistics about flights  '''
@@ -83,15 +85,16 @@ class Flightstats:
         
         tbl = Flightstbl()
         for month in range(self.month1, self.month2 + 1):
-            cursor = self.db.cursor()
-            sql = "SELECT callsign, DATE(ts) FROM flights WHERE gpsaccuracy>=8 AND overvlbg=1 AND MONTH(ts)=%i AND YEAR(ts)=%i" %(month, self.year)
-            logging.debug(sql)
-            cursor.execute(sql)
-            rs = cursor.fetchall()
-            for record in rs:
-                callsign = record[0]
-                ts = record[1]
-                tbl.addFlight( "%i-%i"%(month, self.year), callsign, {'ts':ts} ) 
+            for xvlbg in vlbg:
+                cursor = self.db.cursor()
+                sql = "SELECT callsign, DATE(ts) FROM flights WHERE gpsaccuracy>=8 AND overvlbg=%i AND MONTH(ts)=%i AND YEAR(ts)=%i" %(xvlbg, month, self.year)
+                logging.debug(sql)
+                cursor.execute(sql)
+                rs = cursor.fetchall()
+                for record in rs:
+                    callsign = record[0]
+                    ts = record[1]
+                    tbl.addFlight( "%i-%i"%(month, self.year), callsign, xvlbg, {'ts':ts} ) 
         
         tbl.printStats()
       
