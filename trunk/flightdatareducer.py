@@ -129,7 +129,7 @@ def main():
     # - did _not_ cross Vorarlberg (overVlbg=0)
     # - where the callsign flickering problem was solved (mergestate IS NOT NULL)
     # - where the gpsaccuracy-check was already completed
-    sql = "SELECT id FROM flights WHERE state IS NULL AND overVlbg=0 AND mergestate IS NOT NULL AND gpsaccuracy IS NOT NULL AND MONTH(ts) <=%i AND YEAR(ts) <=%i" %(month, year)
+    sql = "SELECT id FROM flights WHERE state IS NULL AND overVlbg=0 AND mergestate IS NOT NULL AND gpsaccuracy IS NOT NULL AND MONTH(ts)<=%i AND YEAR(ts)<=%i" %(month, year)
     logging.info(sql)
     cursor.execute(sql)
     rs = cursor.fetchall()
