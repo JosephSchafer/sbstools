@@ -30,6 +30,7 @@ class Flightstbl:
     
     def __init__(self): 
         self.tbl = {}
+        self.names = []
     
     def addFlight(self, name, callsign, options={}):
         ''' add flight to tbl '''
@@ -40,54 +41,57 @@ class Flightstbl:
         else:
             flights.append( (name, options) )
         self.tbl[callsign] = flights
+
+        if name not in self.names:
+            self.names.append( name )
         
     def printStats(self):
         ''' print statistics '''
         
-        for key in self.tbl.keys():
+        print self.tbl 
+        names = self.names 
+        logging.info( names )
+        keys = self.tbl.keys()
+        keys.sort()
+
+        # loop over all callsigns and count occurance
+        for key in keys:
             flights = self.tbl.get( key )
-            names = set( [name for name, options in flights] )
-            logging.info("->callsign %s" %key)
-            for name in names:
-                count = len( [name for name, options in flights if name==name] )
-                logging.info("\t-%s %i" %(name, count) )
+            logging.info("%s" %key)
+            line = ""
+            for n in names:
+                count = [ name for name, stuff in flights].count(n)
+                line += "\t %i" %count
+            logging.info( line )
         
 class Flightstats:
     ''' statistics about flights  '''
     
     def __init__(self, host, db, user, password):
         self.db = MySQLdb.connect(host = host, db = db, user = user, passwd = password)
-        self.month1 = self.year1 = self.month2 = self.year2 = None
-    
-    def setComparisonMonths(self, month1, year1, month2, year2):
+        self.setComparisonMonths(None, None, None)   
+ 
+    def setComparisonMonths(self, month1, month2, year):
         ''' these two periods shall be compared '''
         
         self.month1 = month1
-        self.year1 = year1
         self.month2 = month2
-        self.year2 = year2
+        self.year = year
         
     def run(self):
         ''' start engine '''
         
         tbl = Flightstbl()
-        cursor = self.db.cursor()
-        sql = "SELECT DISTINCT callsign FROM flights WHERE gpsaccuracy>=8  AND overvlbg=1 AND MONTH(ts)=%i AND YEAR(ts)=%i" %(self.month1, self.year1)
-        logging.debug(sql)
-        cursor.execute(sql)
-        rs = cursor.fetchall()
-        for record in rs:
-            callsign = record[0]
-            tbl.addFlight( "%i-%i"%(month1, year1), callsign ) 
-        
-        sql = "SELECT DISTINCT callsign FROM flights WHERE gpsaccuracy>=8 AND overvlbg=1 AND MONTH(ts)=%i AND YEAR(ts)=%i" %(self.month2, self.year2)
-        logging.debug(sql)
-        cursor.execute(sql)
-        rs = cursor.fetchall()
-        for record in rs:
-            callsign = record[0]
-            tbl.addFlight( "%i-%i"%(month2, year2), callsign )
-        cursor.close()
+        for month in range(self.month1, self.month2 + 1):
+            cursor = self.db.cursor()
+            sql = "SELECT callsign, DATE(ts) FROM flights WHERE gpsaccuracy>=8 AND overvlbg=1 AND MONTH(ts)=%i AND YEAR(ts)=%i" %(month, self.year)
+            logging.debug(sql)
+            cursor.execute(sql)
+            rs = cursor.fetchall()
+            for record in rs:
+                callsign = record[0]
+                ts = record[1]
+                tbl.addFlight( "%i-%i"%(month, self.year), callsign, {'ts':ts} ) 
         
         tbl.printStats()
       
@@ -104,7 +108,7 @@ def main():
     dbpassword = cfg.get('db', 'password') 
     
     fs = Flightstats(dbhost, dbname, dbuser, dbpassword)
-    fs.setComparisonMonths(4, 2007, 7, 2007)
+    fs.setComparisonMonths(4, 7, 2007)
     fs.run()
     logging.info("### flightstats finished")
  
