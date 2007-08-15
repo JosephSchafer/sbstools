@@ -10,7 +10,6 @@ import logging
 from logging import handlers
 import sys, os
 from ConfigParser import SafeConfigParser
-import gpschecker
 
 def setupLogging():
     ''' set up the Python logging facility '''
@@ -35,7 +34,7 @@ class GeomIntersector:
     def setup(self, shapefile):
         ''' check if flight crossed a certain region '''
         
-        self.src = ogr.Open(shapefile)
+        self.src = ogr.Open('../' + shapefile)
         self.layer = self.src.GetLayer()
         self.feature = self.layer.GetNextFeature()
         self.geometry = self.feature.GetGeometryRef()
@@ -50,7 +49,10 @@ class GeomIntersector:
         linestring = self.createFlightLine(flightid)
         # linestrings with zero or only one point do not have to be considered
         geom = linestring.Intersection(self.geometry)
+        logging.info("\tnumpoints: %s" % dir(geom) )
         logging.info("\tgeom: %s" % geom)
+        logging.info("\tnumpoints: %i" % geom.GetPointCount() )
+
         
     def createFlightLine(self, flightid):
         """ access geographical database info and create linestring """
@@ -88,7 +90,9 @@ class GeomIntersector:
 
 def main():
     ''' geom intersecting '''
-    
+    logger = logging.getLogger('')
+    logger.setLevel(logging.INFO)
+ 
     logging.info("### geom intersector started")
     logging.info("reading configuration ...")
     cfg = SafeConfigParser()
@@ -104,7 +108,7 @@ def main():
     #distancechecker.checkAllFlights()
     # check THA971
     intersector.checkFlight(367923)
-    logging.info("### distance checker finished")
+    logging.info("### geom intersector finished")
  
 if __name__ == '__main__':
     main()
