@@ -49,6 +49,16 @@ continuous improvements
 beta version till May 2007
 continuous improvements
 
+==Package5==
+
+*Description*
+
+  * odometer: flight kilometres over Vorarlberg
+
+*Timeframe*
+
+till end of 2007
+
 ==Future==
 
   * Usage of an object relational mapper: http://www.sqlalchemy.org http://entwickler.de/zonen/portale/psecom,id,101,online,1033.html
