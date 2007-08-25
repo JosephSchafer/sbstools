@@ -49,8 +49,8 @@ CREATE TABLE `aircrafts` (
 DROP TABLE IF EXISTS `flightdata`;
 CREATE TABLE `flightdata` (
   `id` int(10) unsigned NOT NULL auto_increment,
-  `latitude` float default NULL,
-  `longitude` float default NULL,
+  `latitude` decimal(8,5) default NULL,
+  `longitude` decimal(8,5) default NULL,
   `flightid` int(10) unsigned default NULL,
   `time` datetime default NULL,
   `time_ms` smallint(5) unsigned default NULL,
