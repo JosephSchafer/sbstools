@@ -250,12 +250,12 @@ def main():
                     queue.put(message)
                 # force reconnection to Basestation's port
                 else:
-                    logging.warn("empty message read from socket, reopen connection")
+                    logging.warn("empty message read from socket, reopening connection ...")
                     tn.close()
                     break
                 
                 # create the threads responsible for processing the message queue
-                # if a thread dies, a new one is automatically recreated
+                # if a thread dies, a new one is recreated automatically
                 if threading.activeCount() < MAXTHREADS + 1:
                     # currently running threads: mainthread + handlerthreads
                     threadcount = threading.activeCount()
@@ -266,7 +266,7 @@ def main():
                         dbuser = cfg.get('db', 'user')
                         dbpassword = cfg.get('db', 'password')
                         handler = MessageHandler(dbhost, dbname, dbuser, dbpassword)
-                        handler.setName('#%i (born %s)' % (threadcount + 1, time.strftime("%d.%m.%Y %H:%M")))
+                        handler.setName('#%i [born %s]' % (threadcount, time.strftime("%d.%m.%Y %H:%M")))
                         handler.start()
                     except Exception, e:
                         logging.warn("thread exception: %s" %str(e))
