@@ -244,13 +244,17 @@ def main():
                 message = tn.read_until('\n', TIMEOUT)
                 message = message.replace("\r\n", "")
                 # when network connection is down, no exception is thrown but
-                # an empty string is returned
+                # an empty string is returned; empty string is also returned when no messages can be read due to 
+                # a "aircraftfree sky"
                 if len(message):
                     queue.put(message)
+                # force reconnection to Basestation's port
                 else:
-                    pass
+                    logging.warn("empty message read from socket, reopen connection")
+                    tn.close()
+                    break
                 
-                # create the threads which are responsible for processing the message queue
+                # create the threads responsible for processing the message queue
                 # if a thread dies, a new one is automatically recreated
                 if threading.activeCount() < MAXTHREADS + 1:
                     # currently running threads: mainthread + handlerthreads
