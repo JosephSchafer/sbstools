@@ -195,7 +195,7 @@ class DataCollector:
     def logFlightdata(self, flightid, altitude, latitude, longitude, time, time_ms=0, transmissiontype=0):
         """ store flightdata """
         cursor = self.db.cursor()
-        sql = "INSERT INTO flightdata (flightid, altitude, latitude, longitude, time, time_ms) VALUES (%s, %s, %s, %s, '%s', %i)" %(str(flightid), str(altitude), str(latitude), str(longitude), time, time_ms)
+        sql = "INSERT INTO flightdata (flightid, altitude, latitude, longitude, time, time_ms, transmissiontype) VALUES (%s, %s, %s, %s, '%s', %i, %i)" %(str(flightid), str(altitude), str(latitude), str(longitude), time, time_ms, transmissiontype)
         logging.info(sql)
         cursor.execute(sql)
         self.db.commit();
