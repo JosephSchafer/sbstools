@@ -195,7 +195,7 @@ class DataCollector:
     def logFlightdata(self, flightid, altitude, latitude, longitude, time, time_ms=0, transmissiontype=0):
         """ store flightdata """
         cursor = self.db.cursor()
-        sql = "INSERT INTO flightdata (flightid, altitude, latitude, longitude, time, time_ms, transmissiontype) VALUES (%s, %s, %s, %s, '%s', %i, %i)" %(str(flightid), str(altitude), str(latitude), str(longitude), time, time_ms, transmissiontype)
+        sql = "INSERT INTO flightdata (flightid, altitude, latitude, longitude, time, time_ms) VALUES (%s, %s, %s, %s, '%s', %i)" %(str(flightid), str(altitude), str(latitude), str(longitude), time, time_ms)
         logging.info(sql)
         cursor.execute(sql)
         self.db.commit();
@@ -245,9 +245,10 @@ def main():
                 message = message.replace("\r\n", "")
                 # when network connection is down, no exception is thrown but
                 # an empty string is returned; empty string is also returned when no messages can be read due to 
-                # a "aircraftfree sky"
+                # an "aircraftfree sky"
                 if len(message):
                     queue.put(message)
+                # 2007-08-26 bugfix: don't stop working when network link is interrupted (e.g. router reboot)
                 # force reconnection to Basestation's port
                 else:
                     logging.warn("empty message read from socket, reopening connection ...")
