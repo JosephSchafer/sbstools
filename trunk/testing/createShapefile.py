@@ -82,14 +82,26 @@ class FlightReader:
                 cursor2.execute(sql2)
                 rs2 = cursor2.fetchall()
                 points = []
+                
+                time = None
+                times = []
                 for longitude, latitude, altitude, time in rs2:
+                    # remember start datetime
+                    if time == None:
+                        date, time = time.split(' ')
+                        times.append( (date, time) )
+                        
                     # convert altitude from ft to m
                     altitude = altitude * 0.3048
                     logging.info( (longitude, latitude, altitude) )
                     points.append( (longitude, latitude, altitude) )
                 cursor2.close()
+                # remember last datetime
+                date, time = time.split(' ')
+                times.append( (date, time) )
+                
                 points = self.reducePoints( points )
-                flights.append( (callsign, hexident, ts, points) )
+                flights.append( (callsign, hexident, times, points) )
             
             return flights
             
@@ -101,10 +113,10 @@ class ShapefileCreator:
         self.srs = osr.SpatialReference()
         self.srs.SetWellKnownGeogCS('WGS84')
         
-    def addFlight(self, callsign, hexident, datetime, points):
+    def addFlight(self, callsign, hexident, times, points):
         ''' add linestring '''
         
-        self.flights.append( (callsign, hexident, datetime, points) )
+        self.flights.append( (callsign, hexident, times, points) )
     
     def createFile(self):
         ''' start the engine '''
@@ -123,15 +135,28 @@ class ShapefileCreator:
         layer.CreateField( field1 )
         field2 = ogr.FieldDefn( 'hexident', ogr.OFTString )
         layer.CreateField ( field2 )
-        field3 = ogr.FieldDefn( 'datetime', ogr.OFTString )
+        field3 = ogr.FieldDefn( 'startdate', ogr.OFTString )
         layer.CreateField ( field3 ) 
+        field4 = ogr.FieldDefn( 'starttime', ogr.OFTString )
+        layer.CreateField ( field4 ) 
+        field5 = ogr.FieldDefn( 'enddate', ogr.OFTString )
+        layer.CreateField ( field5 ) 
+        field6 = ogr.FieldDefn( 'endtime', ogr.OFTString )
+        layer.CreateField ( field6 ) 
 
         # add all flights
-        for callsign, hexident, datetime, points in self.flights:
+        for callsign, hexident, times, points in self.flights:
             feature = ogr.Feature( layer.GetLayerDefn() )
             feature.SetField( 'callsign', callsign )
             feature.SetField( 'hexident', hexident )
-            feature.SetField( 'datetime', datetime )
+            # date setting stuff
+            startdate, starttime = times[0]
+            enddate, endtime = times[1]
+            feature.SetField( 'startdate', startdate )
+            feature.SetField( 'starttime', starttime )
+            feature.SetField( 'enddate', enddate )
+            feature.SetField( 'endtime', endtime )
+            
             linestring = ogr.Geometry(ogr.wkbLineString25D)
             linestring.SetCoordinateDimension(3)
             linestring.AssignSpatialReference( self.srs )
@@ -157,11 +182,11 @@ def main():
    
     print dbhost, dbname, dbuser, dbpassword 
     flightreader = FlightReader(dbhost, dbname, dbuser, dbpassword)
-    flightreader.setDate('2007-07-07')
+    flightreader.setDate('2007-09-05')
     flights = flightreader.grabFlights()
     creator = ShapefileCreator()
-    for callsign, hexident, datetime, points in flights:
-        creator.addFlight(callsign, hexident, datetime, points)
+    for callsign, hexident, times, points in flights:
+        creator.addFlight(callsign, hexident, times, points)
     creator.createFile()
     
     logging.info("### shapefile creator finished")
