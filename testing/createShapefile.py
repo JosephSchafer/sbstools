@@ -85,10 +85,10 @@ class FlightReader:
                 
                 time = None
                 times = []
-                for longitude, latitude, altitude, time in rs2:
+                for longitude, latitude, altitude, ts in rs2:
                     # remember start datetime
                     if time == None:
-                        date, time = time.split(' ')
+                        date, time = ts.date(), ts.time()
                         times.append( (date, time) )
                         
                     # convert altitude from ft to m
@@ -97,7 +97,7 @@ class FlightReader:
                     points.append( (longitude, latitude, altitude) )
                 cursor2.close()
                 # remember last datetime
-                date, time = time.split(' ')
+                date, time = ts.date(), ts.time()
                 times.append( (date, time) )
                 
                 points = self.reducePoints( points )
@@ -121,7 +121,7 @@ class ShapefileCreator:
     def createFile(self):
         ''' start the engine '''
         
-        filename = 'export_2007-07-07.shp'
+        filename = 'export_2007-09-05.shp'
         driver = ogr.GetDriverByName(self.SHAPEFILEDRV)
         if os.path.exists(filename):
             driver.DeleteDataSource(filename)
