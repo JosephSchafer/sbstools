@@ -64,7 +64,7 @@ class FlightReader:
                 self.setDate( time.strftime("%Y-%m-%d") )
             
             flights = []
-            sql = self.basesql + " AND overvlbg=1 AND DATE(ts) = '%s' LIMIT 5" %self.date
+            sql = self.basesql + " AND overvlbg=1 AND DATE(ts) = '%s' LIMIT 1" %self.date
             logging.info( sql )
             cursor = self.db.cursor()
             cursor.execute( sql )
@@ -112,7 +112,11 @@ class ShapefileCreator:
         self.flights = []
         self.srs = osr.SpatialReference()
         self.srs.SetWellKnownGeogCS('WGS84')
-        
+        self.dst = osr.SpatialReference()
+        # Austria GK M28
+        # http://freegis.org/pipermail/mapserver-de/2004-October/000654.html
+        self.dst.ImportFromEPSG(31281)
+ 
     def addFlight(self, callsign, hexident, times, points):
         ''' add linestring '''
         
@@ -122,13 +126,13 @@ class ShapefileCreator:
         ''' start the engine '''
         
         filename = 'export_2007-09-05.shp'
-        driver = ogr.GetDriverByName(self.SHAPEFILEDRV)
-        if os.path.exists(filename):
-            driver.DeleteDataSource(filename)
-        src = driver.CreateDataSource(filename)
-        layer = src.CreateLayer('dub', srs=self.srs, geom_type=ogr.wkbLineString25D) #, options=['SHPT', 'ARCZ'])
+        driver = ogr.GetDriverByName( self.SHAPEFILEDRV )
+        if os.path.exists( filename ):
+            driver.DeleteDataSource( filename )
+        src = driver.CreateDataSource( filename )
+        layer = src.CreateLayer( 'dub', srs=self.dst, geom_type=ogr.wkbLineString25D) #, options=['SHPT', 'ARCZ'])
         featuredefn = ogr.FeatureDefn()
-        featuredefn.SetGeomType(ogr.wkbLineString25D)
+        featuredefn.SetGeomType( ogr.wkbLineString25D )
         
         # create fields
         field1 = ogr.FieldDefn( 'callsign', ogr.OFTString )
@@ -157,11 +161,14 @@ class ShapefileCreator:
             feature.SetField( 'enddate', enddate )
             feature.SetField( 'endtime', endtime )
             
-            linestring = ogr.Geometry(ogr.wkbLineString25D)
-            linestring.SetCoordinateDimension(3)
-            linestring.AssignSpatialReference( self.srs )
+            linestring = ogr.Geometry( ogr.wkbLineString25D )
+            linestring.SetCoordinateDimension( 3 )
+            linestring.AssignSpatialReference( self.dst )
+            trans = osr.CoordinateTransformation( self.srs, self.dst )
             for x, y, z in points:
-                linestring.AddPoint(x, y, z)
+                transx, transy, transz = trans.TransformPoint( x, y, z ) 
+                print (transx, transy, z) 
+                linestring.AddPoint(transx, transy, z)
             feature.SetGeometryDirectly(linestring)
             layer.CreateFeature(feature)
             feature = None
