@@ -64,7 +64,7 @@ class FlightReader:
                 self.setDate( time.strftime("%Y-%m-%d") )
             
             flights = []
-            sql = self.basesql + " AND overvlbg=1 AND DATE(ts) = '%s' LIMIT 1" %self.date
+            sql = self.basesql + " AND overvlbg=1 AND DATE(ts) = '%s' LIMIT 5" %self.date
             logging.info( sql )
             cursor = self.db.cursor()
             cursor.execute( sql )
@@ -72,6 +72,7 @@ class FlightReader:
         
             for record in rs:
                 flightid = record[0]
+                print flightid
                 callsign = record[1]
                 hexident = record[2]
                 ts = record[3]
@@ -115,7 +116,9 @@ class ShapefileCreator:
         self.dst = osr.SpatialReference()
         # Austria GK M28
         # http://freegis.org/pipermail/mapserver-de/2004-October/000654.html
-        self.dst.ImportFromEPSG(31281)
+        # self.dst.ImportFromEPSG(31281)
+        # MGI (Ferro) / Austria GK West Zone | EPSG-Code 31251
+        self.dst.ImportFromEPSG(31251)
  
     def addFlight(self, callsign, hexident, times, points):
         ''' add linestring '''
