@@ -190,9 +190,18 @@ def main():
     dbuser = cfg.get('db', 'user')
     dbpassword = cfg.get('db', 'password') 
    
-    print dbhost, dbname, dbuser, dbpassword 
+   # parsing options
+    from optparse import OptionParser
+    parser = OptionParser()
+    parser.add_option("-s", "--startdate", dest="startdate", help="startdate", metavar="STARTDATE")
+    options, args = parser.parse_args()
+    startdate = options.startdate
+    if startdate == None:
+        logging.info("missing arguments")
+        return
+    
     flightreader = FlightReader(dbhost, dbname, dbuser, dbpassword)
-    flightreader.setDate('2007-09-05')
+    flightreader.setDate( startdate )
     flights = flightreader.grabFlights()
     creator = ShapefileCreator()
     for callsign, hexident, times, points in flights:
