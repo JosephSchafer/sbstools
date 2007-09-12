@@ -44,12 +44,12 @@ class FlightReader:
         for longitude, latitude, altitude in points:
             dist = distcalc.distance( lat, long, latitude, longitude )
             cumulateddist += dist
-            logging.info( "distance: %i" %dist )
-            logging.info( "cumulated distance: %i" %cumulateddist )
+            logging.debug( "distance: %i" %dist )
+            logging.debug( "cumulated distance: %i" %cumulateddist )
             if cumulateddist > THRESHOLD:
                 if (longitude, latitude, altitude) not in rpoints:
                     rpoints.append( (longitude, latitude, altitude) )
-                    logging.info( "appending point (%f, %f, %d)" %(longitude, latitude, altitude) )
+                    logging.debug( "appending point (%f, %f, %d)" %(longitude, latitude, altitude) )
                     cumulateddist = 0
             lat, long, alt = latitude, longitude, altitude
         # make sure that very last point in reduced list
@@ -63,22 +63,23 @@ class FlightReader:
             if self.date == None:
                 self.setDate( time.strftime("%Y-%m-%d") )
             
+            logging.info("date: %s" %self.date)
             flights = []
-            sql = self.basesql + " AND overvlbg=1 AND DATE(ts) = '%s' LIMIT 5" %self.date
-            logging.info( sql )
+            sql = self.basesql + " AND overvlbg=1 AND DATE(ts) = '%s'" %self.date
+            logging.debug( sql )
             cursor = self.db.cursor()
             cursor.execute( sql )
             rs = cursor.fetchall()
         
             for record in rs:
                 flightid = record[0]
-                print flightid
+                logging.info("processing flight %i ..." %flightid) 
                 callsign = record[1]
                 hexident = record[2]
                 ts = record[3]
                 
                 sql2 = "SELECT longitude, latitude, altitude, time FROM flightdata WHERE flightid=%i AND longitude != 0 AND latitude != 0" %flightid
-                logging.info(sql2)
+                logging.debug(sql2)
                 cursor2 = self.db.cursor()
                 cursor2.execute(sql2)
                 rs2 = cursor2.fetchall()
@@ -94,16 +95,18 @@ class FlightReader:
                         
                     # convert altitude from ft to m
                     altitude = altitude * 0.3048
-                    logging.info( (longitude, latitude, altitude) )
+                    logging.debug( (longitude, latitude, altitude) )
                     points.append( (longitude, latitude, altitude) )
                 cursor2.close()
                 # remember last datetime
                 date, time = ts.date(), ts.time()
                 times.append( (date, time) )
+
                 
                 points = self.reducePoints( points )
                 flights.append( (callsign, hexident, times, points) )
-            
+                logging.info( "\t%i points added" %len(points) )
+                logging.info( "\t%s" %str(times[0][1]) )
             return flights
             
 class ShapefileCreator:
@@ -117,6 +120,7 @@ class ShapefileCreator:
         # Austria GK M28
         # http://freegis.org/pipermail/mapserver-de/2004-October/000654.html
         # self.dst.ImportFromEPSG(31281)
+        # Austria GK West Zone (y-coordinate - 5.000.000)
         # MGI (Ferro) / Austria GK West Zone | EPSG-Code 31251
         self.dst.ImportFromEPSG(31251)
  
@@ -125,10 +129,10 @@ class ShapefileCreator:
         
         self.flights.append( (callsign, hexident, times, points) )
     
-    def createFile(self):
+    def createFile(self, name):
         ''' start the engine '''
         
-        filename = 'export_2007-09-05.shp'
+        filename = 'export_%s.shp' %name
         driver = ogr.GetDriverByName( self.SHAPEFILEDRV )
         if os.path.exists( filename ):
             driver.DeleteDataSource( filename )
@@ -150,7 +154,14 @@ class ShapefileCreator:
         layer.CreateField ( field5 ) 
         field6 = ogr.FieldDefn( 'endtime', ogr.OFTString )
         layer.CreateField ( field6 ) 
-
+        # altitude: min, max, avg
+        field7 = ogr.FieldDefn( 'alt_min', ogr.OFTInteger )
+        layer.CreateField ( field7 ) 
+        field8 = ogr.FieldDefn( 'alt_max', ogr.OFTInteger )
+        layer.CreateField ( field8 ) 
+        field9 = ogr.FieldDefn( 'alt_avg', ogr.OFTInteger )
+        layer.CreateField ( field9 ) 
+	
         # add all flights
         for callsign, hexident, times, points in self.flights:
             feature = ogr.Feature( layer.GetLayerDefn() )
@@ -163,14 +174,24 @@ class ShapefileCreator:
             feature.SetField( 'starttime', starttime )
             feature.SetField( 'enddate', enddate )
             feature.SetField( 'endtime', endtime )
-            
+
+            # max, min, avg of z-coordinate
+            altitudes = [z for x, y, z in points]
+            alt_max = max(altitudes)
+            alt_min = min(altitudes)
+            alt_avg = sum(altitudes) / float(len(altitudes)) 
+
+            feature.SetField( 'alt_max', int(round(alt_max,0)) )
+            feature.SetField( 'alt_min', int(round(alt_min,0)) )
+            feature.SetField( 'alt_avg', int(round(alt_avg,0)) )
+           
             linestring = ogr.Geometry( ogr.wkbLineString25D )
             linestring.SetCoordinateDimension( 3 )
             linestring.AssignSpatialReference( self.dst )
             trans = osr.CoordinateTransformation( self.srs, self.dst )
             for x, y, z in points:
                 transx, transy, transz = trans.TransformPoint( x, y, z ) 
-                print (transx, transy, z) 
+                logging.debug(transx, transy, z) 
                 linestring.AddPoint(transx, transy, z)
             feature.SetGeometryDirectly(linestring)
             layer.CreateFeature(feature)
@@ -179,7 +200,7 @@ class ShapefileCreator:
         src.Destroy()
 
 def main():
-    ''' distance checker '''
+    ''' shapefile creator '''
     
     logging.info("### shapefile creator started")
     logging.info("reading configuration ...")
@@ -190,7 +211,7 @@ def main():
     dbuser = cfg.get('db', 'user')
     dbpassword = cfg.get('db', 'password') 
    
-   # parsing options
+    # parsing options
     from optparse import OptionParser
     parser = OptionParser()
     parser.add_option("-s", "--startdate", dest="startdate", help="startdate", metavar="STARTDATE")
@@ -205,8 +226,8 @@ def main():
     flights = flightreader.grabFlights()
     creator = ShapefileCreator()
     for callsign, hexident, times, points in flights:
-        creator.addFlight(callsign, hexident, times, points)
-    creator.createFile()
+        creator.addFlight( callsign, hexident, times, points )
+    creator.createFile( startdate )
     
     logging.info("### shapefile creator finished")
  
