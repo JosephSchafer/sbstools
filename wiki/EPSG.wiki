@@ -4,4 +4,4 @@ EPSG-Code 31251
 units=m +no_defs  <>
 }}}
 
-on Ubuntu: /usr/share/proj/epsg
+on Ubuntu: _/usr/share/proj/epsg_
