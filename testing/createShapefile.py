@@ -12,7 +12,7 @@ import ogr, osr
 import sys, os
 import math
 from decimal import *
-sys.path.append('/tmp/sbstools')
+sys.path.append('../')
 from gpschecker import DistanceCalc
 from ConfigParser import SafeConfigParser
 import datetime
