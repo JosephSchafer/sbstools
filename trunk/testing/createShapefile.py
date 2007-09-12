@@ -1,6 +1,11 @@
 #!/usr/bin/python
-# create shapefile
+# Shapefile Creator
+# - creation of shapefiles for selected day (default: yesterday)
+# - standard projection: EPSG 31251
+# - extra fields: start- and enddate, altitude (min, max, avg) per flight
+# - optional upload of shapefiles to selected ftp-server (command line arguments)
 # Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
+
 import MySQLdb
 import logging
 import ogr, osr
@@ -10,10 +15,9 @@ from decimal import *
 sys.path.append('/tmp/sbstools')
 from gpschecker import DistanceCalc
 from ConfigParser import SafeConfigParser
-
+import datetime
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
-verbose = 1
 
 class FlightReader:
     ''' responsible for getting data for selected flights from database '''
@@ -60,8 +64,6 @@ class FlightReader:
         
     def grabFlights(self):
             ''' read flights from database '''
-            if self.date == None:
-                self.setDate( time.strftime("%Y-%m-%d") )
             
             logging.info("date: %s" %self.date)
             flights = []
@@ -132,7 +134,7 @@ class ShapefileCreator:
     def createFile(self, name):
         ''' start the engine '''
         
-        filename = 'export_%s.shp' %name
+        filename = '/tmp/export_%s.shp' %name
         driver = ogr.GetDriverByName( self.SHAPEFILEDRV )
         if os.path.exists( filename ):
             driver.DeleteDataSource( filename )
@@ -198,6 +200,7 @@ class ShapefileCreator:
             feature = None
         
         src.Destroy()
+        return filename
 
 def main():
     ''' shapefile creator '''
@@ -215,20 +218,30 @@ def main():
     from optparse import OptionParser
     parser = OptionParser()
     parser.add_option("-s", "--startdate", dest="startdate", help="startdate", metavar="STARTDATE")
+    parser.add_option("-f", "--ftp", dest="ftp",help="ftp upload", metavar="FTP")
     options, args = parser.parse_args()
     startdate = options.startdate
     if startdate == None:
-        logging.info("missing arguments")
-        return
-    
+        startdate = str(datetime.date.today() - datetime.timedelta(1))
+        logging.info("using yesterday's date: %s" %startdate)
+    ftp = options.ftp   
+ 
     flightreader = FlightReader(dbhost, dbname, dbuser, dbpassword)
     flightreader.setDate( startdate )
     flights = flightreader.grabFlights()
     creator = ShapefileCreator()
     for callsign, hexident, times, points in flights:
         creator.addFlight( callsign, hexident, times, points )
-    creator.createFile( startdate )
+    filename = creator.createFile( startdate )
+    logging.info("filename: %s" %filename)
     
+    # make ftp upload 
+    if ftp != None:
+        # --ftp host:user:pwd:dir
+        host, user, pwd, dir = ftp.split(':')
+        ret = os.system( "ftp-upload --ignore-quit-failure --host %s --password %s --user %s --dir %s %s.*" %(host, pwd, user, dir, filename[:-4]) )
+        logging.info("ftp upload: %s" %ret)
+
     logging.info("### shapefile creator finished")
  
 if __name__ == '__main__':
