@@ -1,8 +1,8 @@
--- MySQL dump 10.11
+-- MySQL dump 10.10
 --
 -- Host: localhost    Database: flightdb
 -- ------------------------------------------------------
--- Server version	5.0.38-Ubuntu_0ubuntu1-log
+-- Server version	5.0.22-Debian_0ubuntu6.06.8-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -49,8 +49,8 @@ CREATE TABLE `aircrafts` (
 DROP TABLE IF EXISTS `flightdata`;
 CREATE TABLE `flightdata` (
   `id` int(10) unsigned NOT NULL auto_increment,
-  `latitude` decimal(8,5) default NULL,
-  `longitude` decimal(8,5) default NULL,
+  `latitude` float default NULL,
+  `longitude` float default NULL,
   `flightid` int(10) unsigned default NULL,
   `time` datetime default NULL,
   `time_ms` smallint(5) unsigned default NULL,
@@ -172,4 +172,3 @@ CREATE TABLE `kexi__parts` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2007-07-04 13:47:54
