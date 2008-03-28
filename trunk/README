@@ -1,4 +1,4 @@
-Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
+Copyright (GPL) 2007, 2008 Dominik Bartenstein <db@wahuu.at>
 sponsored by Land Vorarlberg (http://www.vorarlberg.at) 
 
 
@@ -8,5 +8,7 @@ http://code.google.com/p/sbstools/
 - flightobserver: daemon retrieving data from Basestation application and storing it in database
 - flightprocessor: processing (i.e. merging, determining gps accuracy & geoclassifying) flight data 
 - flightdatareducer: reducing amount of flight data
+
+- createShapefile: create shapefile with flights for specific date, ftp-upload integrated
 
 - testing/: contains tools for creating output (e.g. kml-files) 
