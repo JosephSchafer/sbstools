@@ -1,8 +1,8 @@
--- MySQL dump 10.10
+-- MySQL dump 10.11
 --
 -- Host: localhost    Database: flightdb
 -- ------------------------------------------------------
--- Server version	5.0.22-Debian_0ubuntu6.06.8-log
+-- Server version	5.0.45-Debian_1ubuntu3.3-log
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -29,7 +29,7 @@ CREATE TABLE `airbornevelocitymessage` (
   `time` datetime default NULL,
   PRIMARY KEY  (`id`),
   KEY `flightid` (`flightid`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=12411 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `aircrafts`
@@ -40,7 +40,7 @@ CREATE TABLE `aircrafts` (
   `id` int(10) unsigned NOT NULL auto_increment,
   `hexident` varchar(6) default NULL,
   PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=11947 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `flightdata`
@@ -49,8 +49,8 @@ CREATE TABLE `aircrafts` (
 DROP TABLE IF EXISTS `flightdata`;
 CREATE TABLE `flightdata` (
   `id` int(10) unsigned NOT NULL auto_increment,
-  `latitude` float default NULL,
-  `longitude` float default NULL,
+  `latitude` decimal(8,5) default NULL,
+  `longitude` decimal(8,5) default NULL,
   `flightid` int(10) unsigned default NULL,
   `time` datetime default NULL,
   `time_ms` smallint(5) unsigned default NULL,
@@ -59,7 +59,7 @@ CREATE TABLE `flightdata` (
   PRIMARY KEY  (`id`),
   KEY `time` (`time`),
   KEY `flightid` (`flightid`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=11703 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `flights`
@@ -79,7 +79,7 @@ CREATE TABLE `flights` (
   KEY `aircraftid` (`aircraftid`),
   KEY `overvlbg` (`overvlbg`),
   KEY `ts` (`ts`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=900510 DEFAULT CHARSET=latin1;
 
 --
 -- Table structure for table `kexi__blobs`
@@ -172,3 +172,4 @@ CREATE TABLE `kexi__parts` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
+-- Dump completed on 2008-03-29 13:15:56
