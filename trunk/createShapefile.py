@@ -4,7 +4,8 @@
 # - standard projection: EPSG 31251
 # - extra fields: start- and enddate, altitude (min, max, avg) per flight
 # - optional upload of shapefiles to selected ftp-server (command line arguments)
-# Copyright (GPL) 2007 Dominik Bartenstein <db@wahuu.at>
+# - specify geofilter (vlbg, notvlbg, all)
+# Copyright (GPL) 2007, 2008 Dominik Bartenstein <db@wahuu.at>
 
 import MySQLdb
 import logging
@@ -30,10 +31,10 @@ def setupLogging():
     handler.setFormatter(formatter)
     # add the handler to the root logger
     logger = logging.getLogger('')
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
     logging.getLogger('').addHandler(handler)
 
-#logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
+#logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
 class FlightReader:
     ''' responsible for getting data for selected flights from database '''
@@ -43,10 +44,15 @@ class FlightReader:
         self.db = MySQLdb.connect(host=host, db=db, user=user, passwd=passwd)
         self.basesql = "SELECT DISTINCT flights.id, callsign, aircrafts.hexident, flights.ts FROM flights LEFT JOIN flightdata ON flights.id=flightdata.flightid LEFT JOIN aircrafts ON flights.aircraftid=aircrafts.id WHERE gpsaccuracy>=8"
         self.date = None
+        self.geofilter = None
     
     def setDate(self, date):
         ''' set date limit '''
         self.date = date
+
+    def setGeofilter(self, geofilter):
+	''' set crossing '''
+	self.geofilter = geofilter
         
     def reducePoints(self, points):
         ''' reduce amount of points '''
@@ -83,7 +89,13 @@ class FlightReader:
             
             logging.info("date: %s" %self.date)
             flights = []
-            sql = self.basesql + " AND overvlbg=1 AND DATE(ts) = '%s'" %self.date
+            sql = self.basesql + " AND DATE(ts) = '%s'" %self.date
+
+	    # geofilter: all (no filtering), vlbg (only flights crossing Vlbg), notvlbg (only flights not crossing Vlbg)
+	    if self.geofilter == 'vlbg':
+	      sql += " AND overvlbg=1"
+	    elif self.geofilter == 'notvlbg':
+	      sql += " AND overvlbg=0"
             logging.debug( sql )
             cursor = self.db.cursor()
             cursor.execute( sql )
@@ -147,10 +159,10 @@ class ShapefileCreator:
         
         self.flights.append( (callsign, hexident, times, points) )
     
-    def createFile(self, name):
+    def createFile(self, name, appendix):
         ''' start the engine '''
         
-        filename = '/tmp/export_%s.shp' %name
+        filename = '/tmp/export_%s-%s.shp' %(name, appendix)
         driver = ogr.GetDriverByName( self.SHAPEFILEDRV )
         if os.path.exists( filename ):
             driver.DeleteDataSource( filename )
@@ -236,20 +248,27 @@ def main():
     parser = OptionParser()
     parser.add_option("-s", "--startdate", dest="startdate", help="startdate", metavar="STARTDATE")
     parser.add_option("-f", "--ftp", dest="ftp",help="ftp upload", metavar="FTP")
+    parser.add_option("-g", "--geofilter", dest="geofilter", help="crossing Vorarlberg?", metavar="FILTER")
     options, args = parser.parse_args()
     startdate = options.startdate
     if startdate == None:
         startdate = str(datetime.date.today() - datetime.timedelta(1))
         logging.info("using yesterday's date: %s" %startdate)
-    ftp = options.ftp   
+    ftp = options.ftp
+
+    # crossing: 0 - flights not crossing Vlbg; 1 - flights crossing Vlbg; 2 - all flights 
+    geofilter = options.geofilter
+    if geofilter == None:
+      geofilter = 'vlbg' # by default: only flights crossing Vlbg
  
     flightreader = FlightReader(dbhost, dbname, dbuser, dbpassword)
     flightreader.setDate( startdate )
+    flightreader.setGeofilter( geofilter )
     flights = flightreader.grabFlights()
     creator = ShapefileCreator()
     for callsign, hexident, times, points in flights:
         creator.addFlight( callsign, hexident, times, points )
-    filename = creator.createFile( startdate )
+    filename = creator.createFile( startdate, geofilter )
     logging.info("filename: %s" %filename)
     
     # make ftp upload 
