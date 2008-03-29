@@ -31,7 +31,7 @@ def setupLogging():
     handler.setFormatter(formatter)
     # add the handler to the root logger
     logger = logging.getLogger('')
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     logging.getLogger('').addHandler(handler)
 
 #logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
@@ -224,7 +224,7 @@ class ShapefileCreator:
             trans = osr.CoordinateTransformation( self.srs, self.dst )
             for x, y, z in points:
                 transx, transy, transz = trans.TransformPoint( x, y, z ) 
-                logging.debug(transx, transy, z) 
+                logging.debug( (transx, transy, z) ) 
                 linestring.AddPoint(transx, transy, z)
             feature.SetGeometryDirectly(linestring)
             layer.CreateFeature(feature)
