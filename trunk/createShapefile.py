@@ -96,6 +96,9 @@ class FlightReader:
 	      sql += " AND overvlbg=1"
 	    elif self.geofilter == 'notvlbg':
 	      sql += " AND overvlbg=0"
+	    else:
+	      sql += " AND (overvlbg=0 OR overvlbg=1)"
+
             logging.debug( sql )
             cursor = self.db.cursor()
             cursor.execute( sql )
