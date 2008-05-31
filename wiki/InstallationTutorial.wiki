@@ -35,4 +35,4 @@
 
   * gdal 1.5.1 [http://www.gdal.org gdal]
   * geos 3.0 [http://geos.refractions.net geos]
-  * proj 4.6.0
+  * proj 4.6.0 [http://trac.osgeo.org/proj/ proj]
