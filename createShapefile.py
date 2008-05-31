@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # Shapefile Creator
 # - creation of shapefiles for selected day (default: yesterday)
-# - standard projection: EPSG 31251
+# - standard projection: EPSG 31254 (http://www.esri-austria.at/downloads/coords_at.html)
 # - extra fields: start- and enddate, altitude (min, max, avg) per flight
 # - optional upload of shapefiles to selected ftp-server (command line arguments)
 # - specify geofilter (vlbg, notvlbg, all)
@@ -150,12 +150,9 @@ class ShapefileCreator:
         self.srs = osr.SpatialReference()
         self.srs.SetWellKnownGeogCS('WGS84')
         self.dst = osr.SpatialReference()
-        # Austria GK M28
-        # http://freegis.org/pipermail/mapserver-de/2004-October/000654.html
-        # self.dst.ImportFromEPSG(31281)
-        # Austria GK West Zone (y-coordinate - 5.000.000)
-        # MGI (Ferro) / Austria GK West Zone | EPSG-Code 31251
-        self.dst.ImportFromEPSG(31251)
+        # MGI (Greenwich) / Austria GK West Zone | EPSG-Code 31254
+        # http://www.esri-austria.at/downloads/coords_at.html
+        self.dst.ImportFromEPSG(31254)
  
     def addFlight(self, callsign, hexident, times, points):
         ''' add linestring '''
