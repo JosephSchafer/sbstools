@@ -34,3 +34,4 @@
   2008-05-31
 
   * gdal 1.5.1 [http://www.gdal.org gdal]
+  * geos 3.0 [http://geos.refractions.net geos]
