@@ -6,7 +6,7 @@
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DAEMON=/home/db/sbstools/flightobserver.py
-NAME="pyflightobserver"
+NAME="flightobserver"
 DESC="Flightserver daemon"
 
 test -f $DAEMON || exit 0

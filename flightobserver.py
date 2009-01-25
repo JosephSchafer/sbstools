@@ -39,10 +39,19 @@ def setupLogging():
 
 class MessageHandler(threading.Thread):
     ''' process messages '''
-   
+ 
     def __init__(self, host, db, user, password):
         threading.Thread.__init__(self)
-        self.collector = DataCollector(host, db, user, password)
+        self.host = host
+        self.db = db
+        self.user = user
+        self.password = password
+        self.initDBConnection()
+        self.operrorcounter = 0
+
+    def initDBConnection(self):
+        ''' (re)init db connection '''
+        self.collector = DataCollector(self.host, self.db, self.user, self.password)
  
     def run(self):
         ''' thread runner '''
@@ -51,7 +60,13 @@ class MessageHandler(threading.Thread):
             try:
                 self.processMessage(msg)
             except MySQLdb.OperationalError, e:
-                logging.warn( str(e) + "message %s lost" %msg)
+                logging.warn( str(e) + "%d message %s lost" %(self.operrorcounter, msg))
+                # 2009-01-25 bugfix connection lost when network temporarily down
+                self.operrorcounter += 1
+                if self.operrorcounter > 100:
+                    logging.info("reinit db connection!")
+                    self.initDBConnection()
+                    self.operrorcounter = 0 
                 
     def _createMap(self, msgparts, fields):
         ''' map msg parts to fields '''
