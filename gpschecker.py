@@ -138,7 +138,7 @@ class VelocityChecker:
  
             pnt2 = ogr.Geometry(ogr.wkbPoint)
             pnt2.AssignSpatialReference(spatref)
-            pnt2.SetPoint_2D(0, x, y)
+            pnt2.SetPoint_2D(0, float(x), float(y))
             if pnt == None:
                 pnt = pnt2
             if stepdistance == 0:
