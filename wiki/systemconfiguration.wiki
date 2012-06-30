@@ -1,10 +1,10 @@
 =Sysconfig=
 
   * Hardware: Dell Server + connected SBS-1
-  * OS: Ubuntu 12,94 LTS + VirtualBox running XP
+  * OS: Ubuntu 12,94 LTS + Virtualbox running XP
   * [InstallationTutorial]
 
-==XP (running in VirtualBox)==
+==XP (running in Virtualbox)==
 
   * http://www.kinetic-avionics.co.uk/basestation.php
 
