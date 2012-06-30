@@ -15,7 +15,7 @@ import sys, os
 from ConfigParser import SafeConfigParser
 import gpschecker
 
-LOGFILE = "flightprocessor.log"
+LOGFILE = "/home/db/sbstools/flightprocessor.log"
 
 def setupLogging():
     ''' set up the Python logging facility '''

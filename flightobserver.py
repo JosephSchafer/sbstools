@@ -18,8 +18,8 @@ import threading
 import Queue
 from ConfigParser import SafeConfigParser
 
-LOGFILE = '/var/log/flightobserver.log'
-PIDFILE = '/var/run/pyflightobserver.pid'
+LOGFILE = '/home/db/sbstools/flightobserver.log'
+PIDFILE = '/home/db/sbstools/pyflightobserver.pid'
 queue = Queue.Queue()
    
 def setupLogging():
@@ -52,6 +52,8 @@ class MessageHandler(threading.Thread):
                 self.processMessage(msg)
             except MySQLdb.OperationalError, e:
                 logging.warn( str(e) + "message %s lost" %msg)
+                # trying to reinitialize db connection.
+                self.collector = DataCollector(host, db, user, password)
                 
     def _createMap(self, msgparts, fields):
         ''' map msg parts to fields '''
@@ -134,7 +136,9 @@ class MessageHandler(threading.Thread):
             # split millisecond part from timemessagegenerated
             time_ms = int(mapping.get('timemessagegenerated').split('.')[1])
             if transmissiontype in [2, 3, 4]:
-                logging.info('thread %s: %i item(s) in queue' %( self.getName(), queue.qsize() ) )
+               # only log status message when number of items in queue divisble by 100 without remainder 
+               if queue.qsize() > 0 and queue.qsize() % 1000 == 0:
+                    logging.info('thread %s: %i item(s) in queue' %( self.getName(), queue.qsize() ) )
             
             # transmissiontype 2 and 3 contain geographical information (lat, long)
             if transmissiontype in [2, 3]:
@@ -196,7 +200,7 @@ class DataCollector:
         """ store flightdata """
         cursor = self.db.cursor()
         sql = "INSERT INTO flightdata (flightid, altitude, latitude, longitude, time, time_ms, transmissiontype) VALUES (%s, %s, %s, %s, '%s', %i, %i)" %(str(flightid), str(altitude), str(latitude), str(longitude), time, time_ms, transmissiontype)
-        logging.info(sql)
+        #logging.debug(sql)
         cursor.execute(sql)
         self.db.commit();
         cursor.close()
@@ -205,7 +209,7 @@ class DataCollector:
         ''' store transmission type 4 '''
         cursor = self.db.cursor()
         sql = "INSERT INTO airbornevelocitymessage (flightid, groundspeed, verticalrate, track, time) VALUES (%s, %s, %s, %s, '%s')" %(flightid, groundspeed, verticalrate, track, time)
-        logging.info(sql)
+        #logging.debug(sql)
         try:
             cursor.execute(sql)
             self.db.commit()
