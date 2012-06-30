@@ -1,42 +1,11 @@
-=Ubuntu Linux=
+=Ubuntu Linux Server 12.04 LTS=
 
-  * Server install from Ubuntu 6.06 Setup-CD
-  * Installation of openssh, mysql, python-gdal, 686-kernel
-  * Setup of [http://www.howtoforge.com/ubuntu_vmware_server VMWare-Server]
-  * Configuration of VMWare-Server:
-    * auto-mount usb device [http://www.vmware.com/community/thread.jspa?messageID=489640]
-    * [Vmware vmware.vmx]
-  * Manual download, compilation and installation of [http://www.gdal.org gdal] (version 1.3.2) 
+  * Server installation from setup CD
+  * Installation of openssh, mysql, python-gdal
+  * Setup of [http://www.virtualbox.org VirtualBox]
+  * [http://www.howtoforge.com/vboxheadless-running-virtual-machines-with-virtualbox-4.1-on-a-headless-ubuntu-11.10-server Headless Virtual Box]
 
-  {{{
-  ./configure --prefix=/usr --without-ngpython --with-python=/usr/bin/python --with-geos=yes                           
-  }}}
+=Guest OS Windows XP=
 
- ==mysql==
-
-  * {{{GRANT INSERT, SELECT, UPDATE, DELETE ON flightdb.* to 'flight'@'localhost' IDENTIFIED BY 'flyaway';}}}
-  * /etc/mysql/my.cnf -  add max_connections = 500
-  * innoDB vs. MyISAM table engine
-
-=Windows=
-
-  * Install Kinetics-software
-  * Download FTD2XX.dll http://www.sidena.com/En_download.htm and install it.
-
-=Update=
-
-  * geometry.Intersects hangs sometimes :(
-  * geos 2.2.3 [http://geos.refractions.net geos]
-  * gdal 1.3.2 [http://www.gdal.org gdal]
-  * Deinstalled pre-installed gdal, geos-versions!
-  * Installed proj library
-
-  2008-05-31
-
-  * gdal 1.5.1 [http://www.gdal.org gdal]
-  * geos 3.0 [http://geos.refractions.net geos]
-  * proj 4.6.0 [http://trac.osgeo.org/proj/ proj]
-
-  2008-10-11
-
-  * Vmware server 1.0.6
+  * Auto-logon
+  * Autostart of Kinetic Basestation
