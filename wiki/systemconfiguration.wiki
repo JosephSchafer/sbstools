@@ -1,12 +1,12 @@
 =Sysconfig=
 
   * Hardware: Dell Server + connected SBS-1
-  * OS: Ubuntu 6.06.1 LTS + VMWare Server running W2K
+  * OS: Ubuntu 12,94 LTS + VirtualBox running XP
   * [InstallationTutorial]
 
-==W2K (running in VMWare Server)==
+==XP (running in VirtualBox)==
 
-  * http://www.kinetic-avionics.co.uk/basestation.php updated to version 1.1.1.129 (Feb 08)
+  * http://www.kinetic-avionics.co.uk/basestation.php
 
 ==Linux==
   * mysqld
@@ -14,4 +14,3 @@
        # flightobserver.py - daemon reading data from Basestation's port #30003 and writing relevant info to database
        # flightprocessor.py - processsing (cleaning up, merging, geoclassify) flightdata, running as hourly cronjob
        # flightdatareducer.py - reduction of flight data, running as daily cronjob
- 
